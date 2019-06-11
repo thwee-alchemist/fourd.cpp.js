@@ -23,20 +23,18 @@
   </head>
   <body>
     <h1>This is awesome!</h1>
-    <dynamic-graph width="500" height="500" background="white"></dynamic-graph>
+    <dynamic-graph id="graph" width="500" height="500" background="cornflowerblue"></dynamic-graph>
     <script type="text/javascript">
 
-      var graph = $('dynamic-graph').get(0);
-      $(document).click(function(e){
-        graph.add_vertex({cube: {size: 10, color: 'black'}});
+      var vo = {cube: {size: 10, color: 'black'}};
+
+      var graph = $('#graph').get(0);
+      var last = graph.add_vertex(vo)
+      $(graph).click(function(e){
+        console.log('at least I know I was clicked, right?')
+        graph.add_edge(last, last = graph.add_vertex(vo));
       });
 
-      $(document).contextmenu(function(e){
-        graph.add_edge(
-          Math.round(Math.random() * graph.graph.g.V.size), 
-          Math.round(Math.random() * graph.graph.g.V.size)
-        );
-      })
     </script>
   </body>
 </html>
