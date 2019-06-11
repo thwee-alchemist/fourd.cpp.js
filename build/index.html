@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <meta charset="utf-8">
+      <title>fourd.wasm</title>
+      <meta author="joshua.moore@leudla.net">
+      <link rel="stylesheet" href="bootstrap.min.css">"
+      <link rel="stylesheet" href="bootstrap-slider.min.css">
+      <link rel="stylesheet" href="fourd.css">
+    </head>
+    <body>
+      <h2>fourd.wasm</h2>
+      <p>fourd.wasm is a rewrite of <a href="https://github.com/thwee-alchemist/FourDSocketProxy/blob/master/lib/fourd.js">fourd.js</a> in <a href="https://github.com/thwee-alchemist/fourd.cpp/blob/gh-pages/fourd.cpp">C++</a>, compiled to web assembly.</p>
+      <p> Eventually this work will flow into <a href="https://www.npmjs.com/package/fourdsocketproxy">fourdsocketproxy</a></p>
+      <p>To see this animation in action: 
+        <ol>
+          <li>Click +v twice.</li>
+          <li>Click +e once</li>
+          <li>Enter 0 (zero) when prompted for the edge's source.</li>
+          <li>Enter 1 (one) when prompted for the edge's target.</li>
+          <li>Carefully play with the values below. (The fourd.graph.settings object lets you set these values via the console.)</li>
+          <li>When it breaks, hit refresh</li>
+          <li class="warning">This animation may cause seizures!</li>
+        </ol>
+
+      </p>
+      <div class="container well">
+        <span class="col-md-6">
+            <div class="display"></div>
+        </span>
+          
+        <div class="col-md-6">
+          <button 
+            class="btn btn-primary" 
+            onclick="fourd.graph.add_vertex(options);">
+            +v
+          </button>
+          
+          <button 
+            class="btn btn-primary" 
+            onclick="fourd.graph.add_edge(graph.V.get(parseInt(prompt('Source?'))), graph.V.get(parseInt(prompt('Target?'))), {color: 0xffffff, strength: 1.0});">
+            +e
+          </button>
+
+          <button
+            class="btn btn-primary"
+            onclick="makeCube(fourd, parseInt(prompt('How big a cube do you want? Try 3')));">
+            +cube
+          </button>
+        </div>
+
+        <div class="well col-md-6">
+          <label class="lbl form-label" for="repulsion">Repulsion</label>
+          <output 
+            id="repulsion-output"
+            name="repulsion"
+            value="fourd.graph.settings.repulsion">
+            </output><br>
+
+          <input
+            id="repulsion-number"
+            class="number">
+            <br>
+          <input 
+            id="repulsion-exponent"
+            class="exponent">
+          <br> 
+
+          <label class="lbl form-label" for="attraction">Attraction: </label>
+          <output
+            id="attraction-output"
+            name="attraction"
+            value="fourd.graph.settings.attraction"">
+            </output><br>
+          <input 
+            id="attraction-number"
+            class="number`">
+            <br>
+          <input 
+            id="attraction-exponent"
+            class="exponent">
+            <br>
+
+          <label class="lbl form-label" for="epsilon">Epsilon: </label>
+          <output
+            id="epsilon-output"
+            name="epsilon"
+            value="fourd.graph.settings.epsilon">
+            </output><br>
+          <input
+            id="epsilon-number"
+            class="number">
+            <br>
+          <input 
+            id="epsilon-exponent"
+            class="exponent">
+            <br>
+
+          <label class="lbl form-label" for="friction">Friction</label>
+          <output
+            id="friction-output"
+            name="friction"
+            value="fourd.graph.settings.friction"">
+            </output><br>
+          <input
+            id="friction-number"
+            class="number">
+            <br>
+          <input
+            id="friction-exponent"
+            class="exponent">
+            <br>
+
+          <label class="lbl form-label" for="inner_distance">Inner Distance</label>
+          <output
+            id="inner-distance-output"
+            name="inner_distance"
+            value="fourd.graph.settings.inner_distance"">
+            </output><br>
+          <input 
+            id="inner-distance-number"
+            class="number">
+            <br>
+          <input
+            id="inner-distance-exponent"
+            class="exponent">
+
+          <br>
+        </div>
+      </div>
+
+      <script src="jquery-3.4.0.min.js"></script>
+      <script src="jquery-ui.1.12.1.min.js"></script>
+      <script src="popper.min.js"></script>
+      <script src="bootstrap.min.js"></script>
+      <script src="bootstrap-slider.min.js"></script>
+      <script src="r103.three.min.js"></script>
+      <script src="OrbitControls.js"></script>
+      <script src="fourd.js"></script>
+      <script src="animation.js"></script>
+
+      <script>
+var makeCube = async function(fourd, SIZE){
+  var depths = [];
+  for(var k=0; k<SIZE; k++){
+    var rows = [];
+    for(var i=0; i<SIZE; i++){
+      var column = [];
+      for(var j=0; j<SIZE; j++){
+        var some = new Promise((resolve, reject) => {
+          setTimeout(function(){
+            resolve(true)
+          }, 60);
+        })
+        await some;
+        column.push(fourd.graph.add_vertex(options));
+        if(j>0){
+            fourd.graph.add_edge(column[j], column[j-1], {directed: false, strength: 1.0});
+        }
+        if(i>0){
+            fourd.graph.add_edge(column[j], rows[i-1][j], {directed: false, strength: 1.0});
+        }
+        if(k>0){
+            fourd.graph.add_edge(column[j], depths[k-1][i][j], {directed: false, strength: 1.0});
+        }
+      }
+      rows.push(column);
+    }
+    depths.push(rows);
+
+  }
+}
+
+Module.onRuntimeInitialized = _ => {
+
+  fourd = new FourD(
+    document.querySelector('.display'), 
+    {
+      border: '1px solid black',
+      width: 750,
+      height: 500,
+      background: 0x004477
+    }, 
+    Module.default_settings,
+    Module.LayoutGraph
+  );
+
+  options = {cube: {size: 10, color: 0x000000}};
+
+  fourd.graph.settings.repulsion = 1e3;
+  fourd.graph.settings.attraction = 1e-3;
+  fourd.graph.settings.epsilon = 1e-4;
+  fourd.graph.settings.friction = 1e-1;
+  fourd.graph.settings.inner_distance = 9e6;
+  
+
+  var range = function(min, max, step){
+    var r = [];
+    for(var i=min; i<max; i+=step){
+      r.push(i);
+    }
+
+    return r;
+  };
+
+  var bindNumExp = function(numSel, expSel, outputSel, variable_name){
+    console.log(numSel, expSel, fourd.graph.settings[variable_name]);
+    var number = new Slider(numSel, {
+      ticks: range(0, 10, 1),
+      ticks_labels: range(0, 10, 1),
+      ticks_snap_bounds: 10,
+      value: fourd.graph.settings[variable_name].toFixed(20).match(/[1-9]/)[0]
+    });
+    var exponent = new Slider(expSel, {
+      ticks: range(-5, 7, 1),
+      ticks_labels: range(-5, 7, 1).map(v => `e${v}`),
+      ticks_snap_bounds: 10,
+      value: Math.log10(fourd.graph.settings[variable_name]),
+    });
+    number.on('change', (e) => {
+      var value = e.newValue;
+      fourd.graph.settings[variable_name] = e.newValue * parseFloat(`1e${exponent.getValue()}`);
+      $(outputSel)[0].value = fourd.graph.settings[variable_name];
+      console.log(fourd.graph.settings[variable_name]);
+    })
+    exponent.on('change', (e) => {
+      var value = e.newValue;
+      fourd.graph.settings[variable_name] = number.getValue() * parseFloat(`1e${value}`);
+      $(outputSel)[0].value = fourd.graph.settings[variable_name];
+      console.log(fourd.graph.settings[variable_name]);
+    });
+
+    $(numSel)[0].value = fourd.graph.settings[variable_name].toFixed(20).match(/[1-9]/)[0];
+    $(expSel)[0].value = Math.log10(fourd.graph.settings[variable_name]);
+    $(outputSel)[0].value = fourd.graph.settings[variable_name];
+  };
+
+  bindNumExp('#repulsion-number', '#repulsion-exponent', '#repulsion-output', 'repulsion');
+  bindNumExp('#attraction-number', '#attraction-exponent', '#attraction-output', 'attraction');
+  bindNumExp('#friction-number', '#friction-exponent', '#friction-output', 'friction');
+  bindNumExp('#epsilon-number', '#epsilon-exponent', '#epsilon-output', 'epsilon');
+  bindNumExp('#inner-distance-number', '#inner-distance-exponent', '#inner-distance-output', 'inner_distance');
+};
+        </script>
+    </body>
+</html>

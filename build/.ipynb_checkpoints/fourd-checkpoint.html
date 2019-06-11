@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>fourd.wasm</title>
+        
+    </head>
+    <body>
+        <canvas class="display"></canvas>
+        <script src="r90.three.min.js"></script>
+        <script src="OrbitControls.js"></script>
+        <script src="fourd.js"></script>
+        <script src="jquery-1.11.3.min.js"></script>
+        <script src="animation.js"></script>
+        <script>
+Module.onRuntimeInitialized = _ => {
+    var fourd = new FourD('.display', {
+        border: '1px solid black',
+        width: 500,
+        height: 250,
+        background: 0x004477
+    });
+    console.assert(fourd);
+
+    for(var i=0; i<50; i++){
+        graph.add_vertex();
+    }
+
+    for(var i=0; i<75; i++){
+        graph.random_edge();
+    }
+
+    console.log(graph.vertex_count);
+
+    function step(){
+        graph.layout();
+    };
+    setInterval(step, 100);
+};
+        </script>
+    </body>
+</html>
