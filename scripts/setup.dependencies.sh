@@ -26,12 +26,18 @@ if [ $(basename `pwd`) != "fourd.cpp.js" ]; then
   exit 1
 fi
 
-# Add git submodule emsdk under tools/emsdk
-# I expect the git command to abort instead of overwriting the directory. 
-# git submodule add https://github.com/emscripten-core/emsdk.git tools/emsdk
+PROJECT_DIR=`pwd`
 
-cd tools/emsdk
-git pull
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh
+scons -v
+if [ $? -ne 0 ]; then
+  sudo yum install -y scons
+fi
+
+git clone https://github.com/imvu/gmtl.git src/gmtl
+if [ $? -eq 0 ]; then
+  cd src/gtml
+  sudo scons install
+fi
+
+cd $PROJECT_DIR
+echo `pwd`

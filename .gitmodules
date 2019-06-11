@@ -1,3 +1,9 @@
 [submodule "tools/emsdk"]
 	path = tools/emsdk
 	url = https://github.com/emscripten-core/emsdk.git
+[submodule "src/old"]
+	path = src/old
+	url = https://github.com/thwee-alchemist/fourd.cpp.git
+[submodule "src/gmtl"]
+	path = src/gmtl
+	url = https://github.com/imvu/gmtl.git
