@@ -160,7 +160,7 @@ string LayoutGraph::layout(){
     << ",\"z:\":" << vertex->position[2]
     << "}";
 
-    if(vertex == V.back()){
+    if(vertex != V.back()){
       ss << ",";
     }
   }
