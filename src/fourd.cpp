@@ -46,7 +46,8 @@ EMSCRIPTEN_BINDINGS(fourd){
     .property("inner_distance", &Settings::get_inner_distance, &Settings::set_inner_distance)
     .property("attraction", &Settings::get_attraction, &Settings::set_attraction)
     .property("friction", &Settings::get_friction, &Settings::set_friction)
-    .property("gravity", &Settings::get_gravity, &Settings::set_gravity);
+    .property("gravity", &Settings::get_gravity, &Settings::set_gravity)
+    .property("time_dilation", &Settings::get_time_dilation, &Settings::set_time_dilation);
   emscripten::function("default_settings", &default_settings, allow_raw_pointers());
   emscripten::class_<Vertex>("Vertex")
     .constructor<int>()
