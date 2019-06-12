@@ -11,7 +11,7 @@
 #include "BarnesHutNode3.h"
 #include "DMVertex.h"
 #include "DMEdge.h"
-#include "DynamicMatching.h"
+#include "LayoutGraph.h"
 
 using namespace std;
 using namespace gmtl;
