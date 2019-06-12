@@ -5,7 +5,7 @@
 #include <emscripten/bind.h>
 
 #include "Settings.h"
-#include "FourDType.h"
+#include "FourDType.cpp"
 #include "Vertex.h"
 #include "Edge.h"
 #include "BarnesHutNode3.h"
