@@ -493,7 +493,14 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     var pos_str = this.g.layout();
 
     try{
-      positions = new Map(JSON.parse(pos_str));
+      positions = new Map();
+      JSON.parse(pos_str).map(p => {
+        positions.set(p.id, {
+          x: p.x,
+          y: p.y,
+          z: p.z
+        })
+      })
     }catch(e){
       console.error(pos_str);
     }

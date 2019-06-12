@@ -35,7 +35,7 @@ class LayoutGraph {
     int add_edge(int source, int target, bool directed=false, float strength=1.0);
     void remove_vertex(int);
     void remove_edge(int edge_id);
-    void layout();
+    string layout();
     Vertex* get_v(int i) const;
     Edge* get_e(int i) const;
     long vertex_count() const;

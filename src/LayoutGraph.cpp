@@ -95,7 +95,7 @@ void LayoutGraph::remove_edge(int edge_id){
   - An array of Vec3fs. The caller of the function is responsible for 
     destroying the array.
 */
-void LayoutGraph::layout(){
+string LayoutGraph::layout(){
   // calculate repulsions
   BarnesHutNode3 tree(settings);
 
@@ -141,13 +141,11 @@ void LayoutGraph::layout(){
   
   // update vertices
   gmtl::Vec3f friction;
-
-  if(positions != NULL){
-    delete [] positions;
-    positions = NULL;
-  }
-  positions = new Vec3f[V.size()];
   int i=0;
+  
+  stringstream ss;
+
+  ss << "["
   for(Vertex* vertex : V){
     
     friction = vertex->velocity * settings->friction;
@@ -155,9 +153,23 @@ void LayoutGraph::layout(){
     vertex->acceleration = (vertex->repulsion_forces - vertex->attraction_forces) - friction;
     vertex->velocity += vertex->acceleration;
     vertex->position += vertex->velocity;
-    positions[i++] = vertex->position;
+    
+    ss << "{\"id\":" << vertex.id 
+    << ",\"x\":" << vertex.position[0] 
+    << ",\"y:\":" << vertex.position[1] 
+    << ",\"z:\":" << vertex.position[2]
+    << "}";
+
+    if(vertex == V->back()){
+      ss << ",";
+    }
   }
+
+  ss << "]";
+
+  return ss.str();
 }
+
 
 Vertex* LayoutGraph::get_v(int i) const {
   for(Vertex* v : V){
