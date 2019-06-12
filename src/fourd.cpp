@@ -51,9 +51,9 @@ EMSCRIPTEN_BINDINGS(fourd){
   emscripten::function("default_settings", &default_settings, allow_raw_pointers());
   emscripten::class_<Vertex>("Vertex")
     .constructor<int>()
-    .property("x", &Vertex::get_x)
-    .property("y", &Vertex::get_y)
-    .property("z", &Vertex::get_z);
+    .function("get_x", &Vertex::get_x)
+    .function("get_y", &Vertex::get_y)
+    .function("get_z", &Vertex::get_z);
   emscripten::class_<LayoutGraph>("LayoutGraph")
     .constructor<Settings*>()
     .function("add_vertex", &LayoutGraph::add_vertex)
