@@ -25,6 +25,7 @@ class Randomator {
   float get();
 };
 
+int vertex_id = 0;
 class Vertex {
   public:
   Vec3f position;
@@ -46,5 +47,6 @@ class Vertex {
   bool operator==(const Vertex&);
   string toString();
 };
+
 
 #endif

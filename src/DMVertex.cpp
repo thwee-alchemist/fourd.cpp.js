@@ -17,7 +17,7 @@ DMVertex::DMVertex(Vertex* _finer) : Vertex(new_vertex_id++){
 /*
   A constructor taking two vertex arguments. 
 */
-DMVertex::DMVertex(Vertex* slot1, Vertex* slot2) : Vertex(id++){
+DMVertex::DMVertex(Vertex* slot1, Vertex* slot2) : Vertex(new_vertex_id++){
   T = DMVertexType;
 
   if(slot1->T == DMVertexType){
