@@ -1,9 +1,9 @@
 #ifndef VERTEX
 #define VERTEX
 
-#include "./gmtl/Vec.h"
-#include "./gmtl/VecOps.h"
-#include "./gmtl/gmtl.h"
+#include "gmtl/Vec3f.h"
+#include "gmtl/VecOps.h"
+#include "gmtl/gmtl.h"
 #include <vector>
 #include <map>
 #include <set>
