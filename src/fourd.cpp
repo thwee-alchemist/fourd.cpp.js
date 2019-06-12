@@ -25,6 +25,7 @@ Settings* default_settings(){
   float _attraction = 4e-2;
   float _friction = 8e-1;
   float _gravity = 1e1;
+  float _time_dilation = 0.25;
 
   return new Settings(
     _repulsion, 
@@ -32,13 +33,14 @@ Settings* default_settings(){
     _inner_distance,
     _attraction,
     _friction,
-    _gravity
+    _gravity,
+    _time_dilation
   );
 }
 
 EMSCRIPTEN_BINDINGS(fourd){
   emscripten::class_<Settings>("Settings")
-    .constructor<float, float, float, float, float, float>()
+    .constructor<float, float, float, float, float, float, float>()
     .property("repulsion", &Settings::get_repulsion, &Settings::set_repulsion)
     .property("epsilon", &Settings::get_epsilon, &Settings::set_epsilon)
     .property("inner_distance", &Settings::get_inner_distance, &Settings::set_inner_distance)
