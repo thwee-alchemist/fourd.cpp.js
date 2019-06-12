@@ -1,10 +1,47 @@
-var template = `<div class="display"></div>`;
+
+var template = `
+
+<div class="display"></div>`;
 
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
     const shadowRoot = this.attachShadow({mode: 'open'});
     shadowRoot.innerHTML = template;
+
+    this._vertex_options = {cube: {size: 10, color: 0x000000}};
+    this._edge_options = {color: 0x000000};
+
+    const makeStyle = (res) => {
+      return new Promise((resolve, reject) => {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        res.text().then(t => {
+          link.innerHTML = t;
+          resolve(true);
+        });
+        document.head.appendChild(link);
+        return true;
+      })
+    }
+
+    const makeScript = (res) => {
+      return new Promise((resolve, reject) => {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        res.text().then(t => {
+          script.innerHTML = t;
+          resolve(true)
+        });
+        document.head.appendChild(script);
+      });
+    }
+
+
+    var that = this;
+
+
+    fetch('/build/fourd.css').then(makeStyle);
 
     Module.onRuntimeInitialized = _ => {
       const fourd = this._fourd = new FourD(
@@ -18,18 +55,39 @@ class Dynamic3DGraph extends HTMLElement {
         Module.default_settings,
         Module.LayoutGraph
       );
-      this.graph = fourd.graph;
-
-      this.vertex_options = {cube: {size: 10, color: 0x000000}};
-      this.edge_options = {color: 0x000000};
+      this._graph = fourd.graph;
     
       fourd.graph.settings.repulsion = 1e3;
-      fourd.graph.settings.attraction = 4e-3;
+      fourd.graph.settings.attraction = 1e-3;
       fourd.graph.settings.epsilon = 1e-4;
-      fourd.graph.settings.friction = 1e-1;
+      fourd.graph.settings.friction = 6e-1;
       fourd.graph.settings.inner_distance = 9e6;
-      this.settings = this.graph.settings;
+      this._settings = this.graph.settings;
     }
+  }
+
+  get graph(){
+    return this._graph;
+  }
+
+  get settings(){
+    return this._settings;
+  }
+
+  get vertex_options(){
+    return this._vertex_options;
+  }
+
+  set vertex_options(val){
+    this._vertex_options = val;
+  }
+
+  get edge_options(){
+    return this._edge_options;
+  }
+
+  set edge_options(val){
+    this._edge_options = val;
   }
 
   get width(){
@@ -84,19 +142,19 @@ class Dynamic3DGraph extends HTMLElement {
   }
 
   add_vertex(options=this.vertex_options){
-    return this.graph.add_vertex(options);
+    return this._fourd.graph.add_vertex(options);
   }
 
   add_edge(source, target, options=this.edge_options){
-    return this.graph.add_edge(source, target, options);
+    return this._fourd.graph.add_edge(source, target, options);
   }
 
   remove_vertex(id){
-    return this.graph.remove_vertex(id);
+    return this._fourd.graph.remove_vertex(id);
   }
 
   remove_edge(id){
-    return this.graph.remove_edge(id);
+    return this._fourd.graph.remove_edge(id);
   }
 }
 

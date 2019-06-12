@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <title>fourd.wasm</title>
     <meta author="joshua.moore@leudla.net">
+    <script src="build/jquery-3.4.0.min.js"></script>
+    
     <link rel="stylesheet" href="build/bootstrap.min.css">
     <link rel="stylesheet" href="build/bootstrap-slider.min.css">
     <link rel="stylesheet" href="build/fourd.css">
-
-    <script src="build/jquery-3.4.0.min.js"></script>
     <script src="build/jquery-ui.1.12.1.min.js"></script>
     <script src="build/popper.min.js"></script>
     <script src="build/bootstrap.min.js"></script>
@@ -17,23 +17,78 @@
     <script src="build/OrbitControls.js"></script>
     <script src="build/fourd.js"></script>
     <script src="build/animation.js"></script>
-
+    
     <script type="text/javascript" src="dynamic-graph.js"></script>
     
   </head>
   <body>
     <h1>This is awesome!</h1>
-    <dynamic-graph id="graph" width="500" height="500" background="cornflowerblue"></dynamic-graph>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <dynamic-graph 
+            id="graph" 
+            width="500" 
+            height="500" 
+            background="cornflowerblue">
+          </dynamic-graph>
+          <button id="add-vertex" class="btn btn-outline-primary">Add vertex</button>
+          <button id="add-edge" class="btn btn-outline-primary">Add edge</button>
+        </div>
+      </div>
+    </div>
+    
     <script type="text/javascript">
 
-      var vo = {cube: {size: 10, color: 'black'}};
-
       var graph = $('#graph').get(0);
-      var last = graph.add_vertex(vo)
-      $(graph).click(function(e){
-        console.log('at least I know I was clicked, right?')
-        graph.add_edge(last, last = graph.add_vertex(vo));
-      });
+
+      $('#add-vertex').click(function(){
+        console.log(graph.add_vertex({cube: {size: 10, color: 'black'}}));
+      })
+
+      $('#add-edge').click(function(){
+        graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'});
+      })
+
+      var vo = graph.vertex_options;
+
+
+      function traverse(p, x) {
+        if(x){
+          function traverseArray(arr) {
+            arr.forEach(function (x) {
+              traverse(p, x)
+            })
+          }
+
+          function traverseObject(obj) {
+            for (var key in obj) {
+              if (obj.hasOwnProperty(key)) {
+                traverse(p, obj[key])
+              }
+            }
+          }
+          
+          setTimeout(() => {
+              
+            x._vertex = graph.add_vertex({cube: {size: 10, color: 'black'}});
+
+            if(p && p._vertex){
+              graph.add_edge(p._vertex, x._vertex);
+            }
+            if (x instanceof Array) {
+              traverseArray(x)
+            } else if ((typeof x === 'object') && (x !== null)) {
+              traverseObject(x)
+            } else {
+
+            }
+          }, 1000)
+        }
+      }
+
+      
 
     </script>
   </body>
