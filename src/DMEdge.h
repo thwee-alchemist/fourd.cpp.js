@@ -19,7 +19,7 @@ class DMEdge : public Edge {
   
   DMEdge(Edge* edge);
   bool shares_vertex(DMEdge* e2);
-  DMEdge(DMVertex* _source, DMVertex* _target, bool _directed=false, float _strength=1.0);
+  DMEdge(DMVertex* _source_vertex, DMVertex* _target_vertex, bool _directed=false, float _strength=1.0);
 };
 
 class EdgeComparison {
