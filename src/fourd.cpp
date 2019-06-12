@@ -61,7 +61,6 @@ EMSCRIPTEN_BINDINGS(fourd){
     .function("remove_vertex", &LayoutGraph::remove_vertex)
     .function("remove_edge", &LayoutGraph::remove_edge)
     .function("layout", &LayoutGraph::layout)
-    .property("vertex_count", &LayoutGraph::vertex_count)
     .function("get_v", &LayoutGraph::get_v, allow_raw_pointers())
     .function("get_e", &LayoutGraph::get_e, allow_raw_pointers())
     .function("center_x", &LayoutGraph::center_x)
