@@ -15,6 +15,9 @@
 #include "Edge.h"
 #include "BarnesHutNode3.h"
 
+
+Settings* default_settings();
+
 /*
   The LayoutGraph has five main methods to worry about:
 
