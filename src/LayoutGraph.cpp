@@ -145,7 +145,7 @@ string LayoutGraph::layout(){
   
   stringstream ss;
 
-  ss << "["
+  ss << "[";
   for(Vertex* vertex : V){
     
     friction = vertex->velocity * settings->friction;
