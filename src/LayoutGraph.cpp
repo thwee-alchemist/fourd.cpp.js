@@ -1,3 +1,5 @@
+
+#include "LayoutGraph.h"
 using namespace std;
 
 Settings* default_settings(){
