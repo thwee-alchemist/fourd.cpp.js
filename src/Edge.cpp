@@ -4,12 +4,12 @@
 using namespace std;
 
 
-Edge::Edge(int edge_id, Vertex* _source, Vertex* _target, bool _directed=false, float _strength=1.0f){
+Edge::Edge(int edge_id, Vertex* _source_vertex, Vertex* _target_vertex, bool _directed=false, float _strength=1.0f){
   directed = _directed;
   strength = _strength;
   id = edge_id;
-  source = _source;
-  target = _target;
+  source = _source_vertex;
+  target = _target_vertex;
   T = EdgeType;
   coarser = NULL;
   order = random();

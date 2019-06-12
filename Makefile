@@ -25,4 +25,4 @@ build/wasm/DynamicMatching.o: src/DynamicMatching.cpp src/DynamicMatching.h
 	em++ -I  ./src/gmtl -std=c++11 -s WASM=1  -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 src/DynamicMatching.cpp -s LINKABLE=1 build/wasm/BarnesHutNode3.o -Oz -g4 -o build/wasm/DynamicMatching.o
 
 build: build/wasm/DynamicMatching.o src/fourd.cpp
-	em++ -I  ./src/gmtl -std=c++11 -s WASM=1  -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1  src/fourd.cpp -s LINKABLE=1 build/wasm/DynamicMatching.o -Oz -g4 -o fourd.js ;
+	em++ -I  ./src/gmtl -std=c++11 -s WASM=1  -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1  src/fourd.cpp -s LINKABLE=1 build/wasm/DynamicMatching.o -Oz -g4 -o build/fourd.js ;
