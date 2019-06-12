@@ -69,6 +69,7 @@ class LayoutGraph {
 /*
   DynamicMatching is a LayoutGraph
 */
+/*
 class DynamicMatching : public LayoutGraph {
   public:
   priority_queue<Edge*, vector<Edge*>, EdgeComparison>* pq;
@@ -89,5 +90,6 @@ class DynamicMatching : public LayoutGraph {
   float complexity();
   void layout();
 };
+*/
 
 #endif
