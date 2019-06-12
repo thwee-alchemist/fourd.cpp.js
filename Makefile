@@ -28,4 +28,4 @@ build: build/wasm/DynamicMatching.o src/fourd.cpp
 	em++ -I  ./src/gmtl -std=c++11 -s WASM=1  -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1  src/fourd.cpp -s LINKABLE=1 build/wasm/DynamicMatching.o -Oz -g4 -o build/fourd.js ;
 
 all: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/Vertex.h src/Edge.cpp src/Edge.h src/DMEdge.cpp src/DMEdge.h src/BarnesHutNode3.cpp src/BarnesHutNode3.h src/fourd.cpp
-	em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 src/FourDType.cpp src/Settings.cpp src/Vertex.cpp src/Edge.cpp src/DMVertex.cpp src/DMEdge.cpp src/BarnesHutNode3.cpp src/fourd.cpp -o build/fourd.js
+	em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 src/FourDType.cpp src/Settings.cpp src/Vertex.cpp src/Edge.cpp src/DMVertex.cpp src/DMEdge.cpp src/BarnesHutNode3.cpp src/fourd.cpp -O2 -o build/fourd.js
