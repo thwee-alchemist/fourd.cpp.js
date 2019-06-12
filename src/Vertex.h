@@ -40,9 +40,9 @@ class Vertex {
 
   Vertex(int);
   static Vec3f pairwise_repulsion(const Vec3f&, const Vec3f&, Settings*);
-  float get_x() const;
-  float get_y() const;
-  float get_z() const;
+  float get_x();
+  float get_y();
+  float get_z();
   bool operator==(const Vertex&);
   string toString();
 };

@@ -49,15 +49,15 @@ gmtl::Vec3f Vertex::pairwise_repulsion(const gmtl::Vec3f& one, const gmtl::Vec3f
           (diff / abs_diff);
 }
 
-float Vertex::get_x() const {
+float Vertex::get_x(){
   return position[0];
 }
 
-float Vertex::get_y() const {
+float Vertex::get_y(){
   return position[1];
 }
 
-float Vertex::get_z() const {
+float Vertex::get_z(){
   return position[2];
 }
 
