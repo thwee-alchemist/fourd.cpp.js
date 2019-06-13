@@ -156,8 +156,8 @@ string LayoutGraph::layout(){
     
     ss << vertex->id 
     << ": {\"x\":" << vertex->position[0] 
-    << ",\"y:\":" << vertex->position[1] 
-    << ",\"z:\":" << vertex->position[2]
+    << ",\"y\":" << vertex->position[1] 
+    << ",\"z\":" << vertex->position[2]
     << "}";
 
     if(vertex != V.back()){
