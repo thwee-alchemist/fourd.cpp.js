@@ -1302,11 +1302,11 @@ function updateGlobalBufferViews() {
 
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 23536,
+    STACK_BASE = 23520,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 5266416,
-    DYNAMIC_BASE = 5266416,
-    DYNAMICTOP_PTR = 23504;
+    STACK_MAX = 5266400,
+    DYNAMIC_BASE = 5266400,
+    DYNAMICTOP_PTR = 23488;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
@@ -1786,7 +1786,7 @@ var ASM_CONSTS = [];
 
 
 
-// STATICTOP = STATIC_BASE + 22512;
+// STATICTOP = STATIC_BASE + 22496;
 /* global initializers */  __ATINIT__.push({ func: function() { globalCtors() } });
 
 
@@ -1797,7 +1797,7 @@ var ASM_CONSTS = [];
 
 
 /* no memory initializer */
-var tempDoublePtr = 23520
+var tempDoublePtr = 23504
 assert(tempDoublePtr % 8 == 0);
 
 function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
