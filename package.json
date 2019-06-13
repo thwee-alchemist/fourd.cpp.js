@@ -1,0 +1,31 @@
+{
+  "name": "fourd.cpp.js",
+  "version": "1.0.0",
+  "description": "a dynamic-graph web component",
+  "main": "dist/dynamic-graph.bundle.min.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thwee-alchemist/fourd.cpp.js.git"
+  },
+  "keywords": [
+    "dynamic",
+    "force",
+    "directed",
+    "graph",
+    "visualization"
+  ],
+  "author": "Joshua Marshall Moore",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thwee-alchemist/fourd.cpp.js/issues"
+  },
+  "homepage": "https://github.com/thwee-alchemist/fourd.cpp.js#readme",
+  "dependencies": {
+    "jquery-ui": "^1.12.1",
+    "three": "^0.105.2",
+    "three-orbitcontrols": "^2.102.1"
+  }
+}

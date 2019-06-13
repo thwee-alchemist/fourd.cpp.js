@@ -13,7 +13,7 @@
     <script src="build/popper.min.js"></script>
     <script src="build/jquery-ui.1.12.1.min.js"></script>
     <script src="build/bootstrap-slider.min.js"></script>
-    <script type="text/javascript" src="dist/dynamic-graph.bundle.min.js"></script>
+    <script type="text/javascript" src="dist/dynamic-graph.min.js"></script>
     
   </head>
   <body>
@@ -35,25 +35,51 @@
 
           <dynamic-graph 
             id="graph" 
-            width="250" 
-            height="250" 
+            width="500" 
+            height="500" 
             background="#9ACD32">
           </dynamic-graph>
           <button id="add-vertex" class="btn btn-outline-primary">Add vertex</button>
+          <button id="remove-vertex" class="btn btn-outline-danger">Remove vertex</button>
+          <br>
           <button id="add-edge" class="btn btn-outline-primary">Add edge</button>
+          <button id="remove-edge" class="btn btn-outline-danger">Remove edge</button>
+          <br>
+          <button id="start-animation" class="btn btn-outline-primary">Start animation</button>
         </div>
       </div>
     </div>
     
     <script type="text/javascript">
-
-      var dg = $('#graph').get(0);
       $('#add-vertex').click(function(){
         console.log(graph.add_vertex({cube: {size: 10, color: 0x000000}}));
       })
 
+      $('#remove-vertex').click(function(){
+        console.log(graph.remove_vertex(parseInt(prompt('id?'))));
+      })
+
       $('#add-edge').click(function(){
         console.log(graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'}));
+      })
+
+      $('#remove-edge').click(function(){
+        console.log(graph.remove_edge(parseInt(prompt('id?'))))
+      })
+
+      function setup(){
+        console.log(graph.size)
+      }
+
+      function round(){
+      
+
+        requestAnimationFrame(round);
+      }
+
+      $('#start-animation').click(function(){
+        setup()
+        //round()
       })
     </script>
   </body>

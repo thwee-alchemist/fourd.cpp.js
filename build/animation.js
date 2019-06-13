@@ -390,12 +390,10 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
       }
 
       // remove edges
-      var edges = this.E_by_V.get(vertex_id);
-      for(var i=edges.length-1; i>=0; i--){
-        this.remove_edge(edges[i]);
-      }
+      this.E_by_V.get(vertex_id).forEach(e => this.remove_edge(e))
 
       // remove
+      this.E_by_V.delete(vertex_id);
       this.scene.remove(vertex.object);
       this.V.delete(vertex.id);
     }

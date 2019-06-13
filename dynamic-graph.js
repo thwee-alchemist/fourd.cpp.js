@@ -1,3 +1,6 @@
+
+require('build/animation.js')
+
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
@@ -12,7 +15,7 @@ class Dynamic3DGraph extends HTMLElement {
 
     var that = this;
     Module.onRuntimeInitialized = _ => {
-      const fourd = this._fourd = new FourD(
+      const fourd = this._fourd = new FourDCtrl(
         shadowRoot,
         {
           border: 'none',
@@ -83,31 +86,8 @@ class Dynamic3DGraph extends HTMLElement {
     return this.setAttribute('background', b);
   }
 
-  add_json(json){
-    // https://stackoverflow.com/questions/15690706/recursively-looping-through-an-object-to-build-a-property-list
-    const isObject = val =>
-      typeof val === 'object' && !Array.isArray(val);
-
-    const map = new Map();
-
-    const walk = (parent, obj) => {
-      setTimeout(() => {
-          
-        map.set(obj, this.add_vertex(this.vertex_options));
-        if(parent){
-          this.add_edge(map.get(parent), map.get(obj), this.edge_options);
-        }
-
-        var symbols = Object.getOwnPropertySymbols(obj);
-        for(var symbol of symbols){
-          if(obj[symbol] instanceof Object){
-            walk(obj, obj[symbol]);
-          }
-        }
-      }, 100)
-    }
-
-    walk(null, json)
+  clear(){
+    return this._fourd.graph.clear();
   }
 
   add_vertex(options=this.vertex_options){
