@@ -1,4 +1,8 @@
-FourD = function(shadowRoot, options, default_settings, LayoutGraph){
+var jQuery = $ = require('jquery')
+var THREE = require('three')
+var OrbitControls = require('three-orbit-controls')(THREE)
+
+FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   var that = this;
   var CONSTANTS = {
     width: 1000,
@@ -514,7 +518,7 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
     }
   };
 
-  FourD.prototype.select = function(vertex){
+  FourDCtrl.prototype.select = function(vertex){
 		if(!vertex) return;
 		
 		if(that.selected){
@@ -530,7 +534,7 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
 		that.selected = vertex;
 	};
 	
-	FourD.prototype.deselect = function(){
+	FourDCtrl.prototype.deselect = function(){
 		that.selected = null;
 		that.graph.remove_edge(that.camera_edge.id);
 		delete that.camera_edge;
@@ -540,7 +544,7 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
 		that.selected = null;
 	}
   
-  FourD._internals = {};
+  FourDCtrl._internals = {};
       
   var render = function(){
     requestAnimationFrame(render);
@@ -692,10 +696,10 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
 
 
     // api
-    FourD.graph = graph;
-    FourD.render = render;
-    FourD.clear = clear;
-    FourD.variables = CONSTANTS;
+    FourDCtrl.graph = graph;
+    FourDCtrl.render = render;
+    FourDCtrl.clear = clear;
+    FourDCtrl.variables = CONSTANTS;
 
     this.clear = clear;
     this.variables = CONSTANTS;
@@ -703,11 +707,11 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
     render();
   };
 
-  FourD.setCubeFn = function(fn){
+  FourDCtrl.setCubeFn = function(fn){
     cube = fn;
   };
 
-  FourD.setLineFn = function(fn){
+  FourDCtrl.setLineFn = function(fn){
     line = fn;
   };
 

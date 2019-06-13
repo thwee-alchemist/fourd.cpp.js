@@ -25,7 +25,8 @@
   "homepage": "https://github.com/thwee-alchemist/fourd.cpp.js#readme",
   "dependencies": {
     "jquery-ui": "^1.12.1",
+    "require": "^2.4.20",
     "three": "^0.105.2",
-    "three-orbitcontrols": "^2.102.1"
+    "three-orbit-controls": "^82.1.0"
   }
 }
