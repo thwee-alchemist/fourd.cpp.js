@@ -1,53 +1,21 @@
-
-var template = `
-
-<div class="display"></div>`;
-
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
     const shadowRoot = this.attachShadow({mode: 'open'});
-    shadowRoot.innerHTML = template;
-
+    var container = document.createElement('div');
+    
+    container.id = 'display';
+    shadowRoot.appendChild(container)
+    
     this._vertex_options = {cube: {size: 10, color: 0x000000}};
     this._edge_options = {color: 0x000000};
 
-    const makeStyle = (res) => {
-      return new Promise((resolve, reject) => {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        res.text().then(t => {
-          link.innerHTML = t;
-          resolve(true);
-        });
-        document.head.appendChild(link);
-        return true;
-      })
-    }
-
-    const makeScript = (res) => {
-      return new Promise((resolve, reject) => {
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        res.text().then(t => {
-          script.innerHTML = t;
-          resolve(true)
-        });
-        document.head.appendChild(script);
-      });
-    }
-
-
     var that = this;
-
-
-    fetch('/build/fourd.css').then(makeStyle);
-
     Module.onRuntimeInitialized = _ => {
       const fourd = this._fourd = new FourD(
-        shadowRoot.querySelector('.display'), 
+        shadowRoot,
         {
-          border: '1px solid black',
+          border: 'none',
           width: this.width,
           height: this.height,
           background: this.background
@@ -56,8 +24,9 @@ class Dynamic3DGraph extends HTMLElement {
         Module.LayoutGraph
       );
       this._graph = fourd.graph;
+      // resolve(fourd.graph);
     
-      fourd.graph.settings.repulsion = 1e3;
+      fourd.graph.settings.repulsion = 1e1;
       fourd.graph.settings.attraction = 1e-3;
       fourd.graph.settings.epsilon = 1e-4;
       fourd.graph.settings.friction = 6e-1;

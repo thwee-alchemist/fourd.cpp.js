@@ -13,12 +13,12 @@
     <script src="build/popper.min.js"></script>
     <script src="build/bootstrap.min.js"></script>
     <script src="build/bootstrap-slider.min.js"></script>
-    <script src="build/r103.three.min.js"></script>
+    <script src="build/r105.three.min.js"></script>
     <script src="build/OrbitControls.js"></script>
     <script src="build/fourd.js"></script>
     <script src="build/animation.js"></script>
     
-    <script type="text/javascript" src="dynamic-graph.js"></script>
+    
     
   </head>
   <body>
@@ -29,67 +29,26 @@
         <div class="col-md-12">
           <dynamic-graph 
             id="graph" 
-            width="500" 
-            height="500" 
-            background="cornflowerblue">
+            width="250" 
+            height="250" 
+            background="#9ACD32">
           </dynamic-graph>
           <button id="add-vertex" class="btn btn-outline-primary">Add vertex</button>
           <button id="add-edge" class="btn btn-outline-primary">Add edge</button>
         </div>
       </div>
     </div>
-    
+    <script type="text/javascript" src="dynamic-graph.js"></script>
     <script type="text/javascript">
 
-      var graph = $('#graph').get(0);
-
+      var dg = $('#graph').get(0);
       $('#add-vertex').click(function(){
-        console.log(graph.add_vertex({cube: {size: 10, color: 'black'}}));
+        console.log(graph.add_vertex({cube: {size: 10, color: 0x000000}}));
       })
 
       $('#add-edge').click(function(){
-        graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'});
+        console.log(graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'}));
       })
-
-      var vo = graph.vertex_options;
-
-
-      function traverse(p, x) {
-        if(x){
-          function traverseArray(arr) {
-            arr.forEach(function (x) {
-              traverse(p, x)
-            })
-          }
-
-          function traverseObject(obj) {
-            for (var key in obj) {
-              if (obj.hasOwnProperty(key)) {
-                traverse(p, obj[key])
-              }
-            }
-          }
-          
-          setTimeout(() => {
-              
-            x._vertex = graph.add_vertex({cube: {size: 10, color: 'black'}});
-
-            if(p && p._vertex){
-              graph.add_edge(p._vertex, x._vertex);
-            }
-            if (x instanceof Array) {
-              traverseArray(x)
-            } else if ((typeof x === 'object') && (x !== null)) {
-              traverseObject(x)
-            } else {
-
-            }
-          }, 1000)
-        }
-      }
-
-      
-
     </script>
   </body>
 </html>

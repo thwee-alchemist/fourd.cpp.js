@@ -1,4 +1,4 @@
-FourD = function(selector, options, default_settings, LayoutGraph){
+FourD = function(shadowRoot, options, default_settings, LayoutGraph){
   var that = this;
   var CONSTANTS = {
     width: 1000,
@@ -57,8 +57,8 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     
     // thanks, https://codepen.io/dxinteractive/pen/reNpOR
     var _createTextLabel = function() {
-      var div = document.createElement('div');
-      document.body.appendChild(div);
+      var div = shadowRoot.createElement('div');
+      element.appendChild(div);
       div.className = 'text-label';
       div.style.position = 'absolute';
       div.style.width = 100;
@@ -122,7 +122,7 @@ FourD = function(selector, options, default_settings, LayoutGraph){
           return vector;
         },
         remove: () => {
-          document.body.removeChild(div);
+          element.removeChild(div);
         }
       };
 
@@ -145,7 +145,7 @@ FourD = function(selector, options, default_settings, LayoutGraph){
   Label.all = [];
   
   Vertex.prototype.paint = function(scene){
-    this.object = new THREE.Group();
+    var object = this.object = new THREE.Group();
     this.object.position.set(
       Math.random()*10,
       Math.random()*10,
@@ -181,7 +181,7 @@ FourD = function(selector, options, default_settings, LayoutGraph){
       var label = new Label(this.options.label);
     }
     
-    scene.add(this.object);
+    scene.add(object);
   };
   
   /* 
@@ -440,7 +440,6 @@ FourD = function(selector, options, default_settings, LayoutGraph){
       material_args = { 
         map: new THREE.TextureLoader().load( options.texture )
       };
-      
     }else{
       material_args = { 
         color: options.color,
@@ -492,23 +491,12 @@ FourD = function(selector, options, default_settings, LayoutGraph){
   Graph.prototype.layout = function(){
     var pos_str = this.g.layout();
 
-    try{
-      positions = new Map();
-      JSON.parse(pos_str).map(p => {
-        positions.set(p.id, {
-          x: p.x,
-          y: p.y,
-          z: p.z
-        })
-      })
-    }catch(e){
-      console.error(pos_str);
-    }
+    var positions = JSON.parse(pos_str);
 
     for(var v of this.V.values()){
-      v.object.position.x = positions.get(v.id).x;
-      v.object.position.y = positions.get(v.id).y;
-      v.object.position.z = positions.get(v.id).z;
+      v.object.position.x = positions[v.id].x;
+      v.object.position.y = positions[v.id].y;
+      v.object.position.z = positions[v.id].z;
     }
 
     for(var e of this.E.values()){
@@ -557,7 +545,7 @@ FourD = function(selector, options, default_settings, LayoutGraph){
   
   FourD._internals = {};
       
-  var render = function render(){
+  var render = function(){
     requestAnimationFrame(render);
 
     graph.layout();
@@ -581,9 +569,9 @@ FourD = function(selector, options, default_settings, LayoutGraph){
   
   var camera;
   // api
-  this.init = function(selector, options){
+  this.init = function(shadowRoot, options){
     var settings = Object.assign({}, {
-      border: '1px solid black',
+      border: 'none',
       width: 500,
       height: 250,
       background: 0x004477,
@@ -593,8 +581,9 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     scene = new THREE.Scene();
     this.scene = scene;
     
+    var selector = '#display';
     if(typeof selector === "string"){
-      element = document.querySelector(selector);
+      element = shadowRoot.querySelector(selector);
     }else{
       element = selector;
     }
@@ -608,9 +597,9 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     $(element).height(settings.height);
     
     camera = new THREE.PerspectiveCamera(
-      70,
+      75,
       settings.width / settings.height,
-      1,
+      0.1,
       CONSTANTS.far
     );
     this.camera = camera;
@@ -622,13 +611,13 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     scene.add( camera );
     scene.add( light );
     
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({antialias: true});
     this.renderer = renderer;
     renderer.setClearColor(settings.background);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize( settings.width, settings.height );
     
-    $(element).append( renderer.domElement );
+    shadowRoot.querySelector(selector).appendChild(renderer.domElement);
     $(renderer.domElement).css({
       margin: 0,
       padding: 0,
@@ -725,9 +714,9 @@ FourD = function(selector, options, default_settings, LayoutGraph){
     line = fn;
   };
 
-  this.init(selector, options);
+  this.init(shadowRoot, options);
 
-  var v = this.graph.add_vertex({cube: {}});
+  // var v = this.graph.add_vertex({cube: {}});
   /*
   this.graph.remove_vertex(v);
   this.clear();

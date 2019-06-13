@@ -145,7 +145,7 @@ string LayoutGraph::layout(){
   
   stringstream ss;
 
-  ss << "[";
+  ss << "{";
   for(Vertex* vertex : V){
     
     friction = vertex->velocity * settings->friction;
@@ -154,8 +154,8 @@ string LayoutGraph::layout(){
     vertex->velocity += vertex->acceleration;
     vertex->position += vertex->velocity;
     
-    ss << "{\"id\":" << vertex->id 
-    << ",\"x\":" << vertex->position[0] 
+    ss << "\"id\":" << vertex->id 
+    << "{\"x\":" << vertex->position[0] 
     << ",\"y:\":" << vertex->position[1] 
     << ",\"z:\":" << vertex->position[2]
     << "}";
@@ -165,7 +165,7 @@ string LayoutGraph::layout(){
     }
   }
 
-  ss << "]";
+  ss << "}";
 
   return ss.str();
 }
