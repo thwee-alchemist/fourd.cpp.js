@@ -1,7 +1,3 @@
-import $ from 'jquery';
-import * as THREE from 'three';
-
-
 var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   var that = this;
   var CONSTANTS = {
@@ -635,7 +631,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
     clock = new THREE.Clock();
     this.clock = clock;
-    controls = new OrbitControls( camera, renderer.domElement );
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
     this.controls = controls;
 
     controls.update(clock.getDelta()); 
@@ -724,5 +720,3 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   */
   return this;
 };
-
-export default FourDCtrl;

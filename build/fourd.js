@@ -8279,6 +8279,3 @@ run();
 
 
 // {{MODULE_ADDITIONS}}
-
-
-export default Module;

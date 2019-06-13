@@ -1,7 +1,3 @@
-import $ from 'jquery';
-import FourDCtrl from './build/FourDCtrl.js';
-import Module from 'build/fourd.js';
-
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
@@ -15,32 +11,31 @@ class Dynamic3DGraph extends HTMLElement {
     this._edge_options = {color: 0x000000};
 
     var that = this;
-    var Module = {
-      onRuntimeInitialized: _ => {
-    // Module.onRuntimeInitialized = _ => {
+    //var Module = {
+    //  onRuntimeInitialized: _ => {
+    Module.onRuntimeInitialized = _ => {
     // fourd({...imports}).then(({instance}) => {
 
-        that._fourd = new FourDCtrl(
-          shadowRoot,
-          {
-            border: 'none',
-            width: this.width,
-            height: this.height,
-            background: this.background
-          }, 
-          Module.default_settings,
-          Module.LayoutGraph
-        );
-        that._graph = that._fourd.graph;
-        // resolve(fourd.graph);
-      
-        that._graph.settings.repulsion = 9e1;
-        that._graph.settings.attraction = 3e-3;
-        that._graph.settings.epsilon = 1e-4;
-        that._graph.settings.friction = 3e-1;
-        that._graph.settings.inner_distance = 9e6;
-        that._settings = that.graph.settings;
-      }
+      that._fourd = new FourDCtrl(
+        shadowRoot,
+        {
+          border: 'none',
+          width: this.width,
+          height: this.height,
+          background: this.background
+        }, 
+        Module.default_settings,
+        Module.LayoutGraph
+      );
+      that._graph = that._fourd.graph;
+      // resolve(fourd.graph);
+    
+      that._graph.settings.repulsion = 9e1;
+      that._graph.settings.attraction = 3e-3;
+      that._graph.settings.epsilon = 1e-4;
+      that._graph.settings.friction = 3e-1;
+      that._graph.settings.inner_distance = 9e6;
+      that._settings = that.graph.settings;
     }
   }
 
@@ -111,6 +106,6 @@ class Dynamic3DGraph extends HTMLElement {
   remove_edge(id){
     return this._fourd.graph.remove_edge(id);
   }
-}
+};
 
 window.customElements.define('dynamic-graph', Dynamic3DGraph);
