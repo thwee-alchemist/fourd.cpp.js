@@ -26,10 +26,10 @@ class Dynamic3DGraph extends HTMLElement {
       this._graph = fourd.graph;
       // resolve(fourd.graph);
     
-      fourd.graph.settings.repulsion = 1e1;
-      fourd.graph.settings.attraction = 1e-3;
+      fourd.graph.settings.repulsion = 9e1;
+      fourd.graph.settings.attraction = 3e-3;
       fourd.graph.settings.epsilon = 1e-4;
-      fourd.graph.settings.friction = 6e-1;
+      fourd.graph.settings.friction = 3e-1;
       fourd.graph.settings.inner_distance = 9e6;
       this._settings = this.graph.settings;
     }

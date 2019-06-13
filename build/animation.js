@@ -490,7 +490,6 @@ FourD = function(shadowRoot, options, default_settings, LayoutGraph){
   var edges = false;
   Graph.prototype.layout = function(){
     var pos_str = this.g.layout();
-    console.log(pos_str);
     var positions = JSON.parse(pos_str);
 
     for(var v of this.V.values()){
