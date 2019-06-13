@@ -154,7 +154,7 @@ string LayoutGraph::layout(){
     vertex->velocity += vertex->acceleration;
     vertex->position += vertex->velocity;
     
-    ss << vertex->id 
+    ss << "\"" << vertex->id << "\"" 
     << ": {\"x\":" << vertex->position[0] 
     << ",\"y\":" << vertex->position[1] 
     << ",\"z\":" << vertex->position[2]
