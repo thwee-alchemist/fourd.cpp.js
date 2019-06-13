@@ -34,4 +34,4 @@ js: dynamic-graph.js build/FourDCtrl.js
 	rollup -c --file=dist/dynamic-graph.min.js --format=iife
 
 bundle: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js dynamic-graph.js
-	minify build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js dynamic-graph.js > build/all.bundle.min.js
+	minify build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js dynamic-graph.js > dist/dynamic-graph.bundle.min.js

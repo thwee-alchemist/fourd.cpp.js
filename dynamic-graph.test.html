@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="build/bootstrap-slider.min.css">
     <link rel="stylesheet" href="build/fourd.css">
 
-    <script type="text/javascript" src="build/all.bundle.min.js"></script>
+    <script type="text/javascript" src="dist/dynamic-graph.bundle.min.js"></script>
     
   </head>
   <body>
@@ -17,22 +17,37 @@
       <div class="row">
         <div class="col-md-12">
           <h1>&lt;dynamic-graph&gt;</h1>
-          <h2>A Web Component</h2>
+          <h2>...a web component</h2>
     
           <p>
-            The following is a web component. To use it, include 
+            The following is a web component, a custom HTML element, which the current version of HTML allows for. 
+            This allows for greater encapsulation in web development. 
+
+            This web component displays a graph with a background color, and Javascript-specified vertices and edges.
+            To use it, include 
             <ol>
               <li>dynamic-graph.bundle.min.js</li>
               <li>fourd.wasm</li>
             </ol>
             in the same directory on your web server. 
+
+            The API should be familiar to anyone who's seen my other projects: 
+
+            <ul>
+              <li><b>int add_vertex({cube: {size: 10, color: 'black'}})</b> creates a vertex and returns its id.</li>
+              <li><b>void remove_vertex(vertex_id)</b> removes a vertex</li>
+              <li><b>int add_edge(source_vertex_id, target_vertex_id, {color: 'white'})</b> creates an edge between source and target, and returns its id</li>
+              <li><b>void remove_vertex(edge_id)</b> removes an edge</li>
+            </ul>
           </p>
+
+
 
           <dynamic-graph 
             id="graph" 
             width="500" 
             height="500" 
-            background="#9ACD32">
+            background="#58A7C6">
           </dynamic-graph>
           <button id="add-vertex" class="btn btn-outline-primary">Add vertex</button>
           <button id="remove-vertex" class="btn btn-outline-danger">Remove vertex</button>
@@ -47,7 +62,7 @@
     
     <script type="text/javascript">
       document.querySelector('#add-vertex').onclick = function(){
-        console.log(graph.add_vertex({cube: {size: 10, color: 0x000000}}));
+        console.log(graph.add_vertex({cube: {size: 10, color: '#FEA16F'}}));
       }
 
       document.querySelector('#remove-vertex').onclick = function(){
@@ -55,7 +70,7 @@
       }
 
       document.querySelector('#add-edge').onclick = function(){
-        console.log(graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'}));
+        console.log(graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 0x000000}));
       }
 
       document.querySelector('#remove-edge').onclick = function(){

@@ -221,9 +221,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Edge.prototype.paint = function(scene, options){
-    options = options || {
-      color: 0xffffff
-    };
     this.object = line(scene, this.source.object.position, this.target.object.position, options);
     this.object.edge = this;
   };
@@ -318,7 +315,8 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
     options = Object.assign({
       directed: false,
-      strength: 1.0
+      strength: 1.0,
+      color: 0x000000
     }, options);
 
     var source = this.V.get(source_id);
@@ -338,7 +336,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       this.E_by_V.set(target_id, [edge.id]);
     }
     
-    edge.paint(this.scene);
+    edge.paint(this.scene, options);
     return edge.id;
   };
 	
@@ -418,9 +416,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     if(options.depth === undefined){
       options.depth = 3;
     }
-    if(options.color === undefined){
-      options.color = 0xffffff;
-    }
     
     if(options.wireframe === undefined){
       options.wireframe = false;
@@ -471,7 +466,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     // geometry.addAttribute('position', new THREE.BufferAttribute(positions, 6));
     
 		options = options || {};
-		options.color = options.color !== undefined ? options.color : 0xffffff;
 		// options.transparent = options.transparent ? options.transparent : false;
 		// options.opacity = options.opacity ? options.opacity : 1.0;
     options.linewidth = options.linewidth || 1; 
