@@ -26,7 +26,13 @@
   "dependencies": {
     "jquery-ui": "^1.12.1",
     "require": "^2.4.20",
+    "rollup-plugin-ignore": "^1.0.5",
     "three": "^0.105.2",
     "three-orbit-controls": "^82.1.0"
+  },
+  "devDependencies": {
+    "rollup-plugin-amd": "^4.0.0",
+    "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-node-resolve": "^5.0.2"
   }
 }

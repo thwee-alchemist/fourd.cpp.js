@@ -1,5 +1,6 @@
-
-require('build/animation.js')
+import $ from 'jquery';
+import FourDCtrl from './build/FourDCtrl.js';
+import Module from 'build/fourd.js';
 
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
@@ -14,27 +15,32 @@ class Dynamic3DGraph extends HTMLElement {
     this._edge_options = {color: 0x000000};
 
     var that = this;
-    Module.onRuntimeInitialized = _ => {
-      const fourd = this._fourd = new FourDCtrl(
-        shadowRoot,
-        {
-          border: 'none',
-          width: this.width,
-          height: this.height,
-          background: this.background
-        }, 
-        Module.default_settings,
-        Module.LayoutGraph
-      );
-      this._graph = fourd.graph;
-      // resolve(fourd.graph);
-    
-      fourd.graph.settings.repulsion = 9e1;
-      fourd.graph.settings.attraction = 3e-3;
-      fourd.graph.settings.epsilon = 1e-4;
-      fourd.graph.settings.friction = 3e-1;
-      fourd.graph.settings.inner_distance = 9e6;
-      this._settings = this.graph.settings;
+    var Module = {
+      onRuntimeInitialized: _ => {
+    // Module.onRuntimeInitialized = _ => {
+    // fourd({...imports}).then(({instance}) => {
+
+        that._fourd = new FourDCtrl(
+          shadowRoot,
+          {
+            border: 'none',
+            width: this.width,
+            height: this.height,
+            background: this.background
+          }, 
+          Module.default_settings,
+          Module.LayoutGraph
+        );
+        that._graph = that._fourd.graph;
+        // resolve(fourd.graph);
+      
+        that._graph.settings.repulsion = 9e1;
+        that._graph.settings.attraction = 3e-3;
+        that._graph.settings.epsilon = 1e-4;
+        that._graph.settings.friction = 3e-1;
+        that._graph.settings.inner_distance = 9e6;
+        that._settings = that.graph.settings;
+      }
     }
   }
 

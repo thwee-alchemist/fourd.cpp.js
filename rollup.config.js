@@ -1,17 +1,28 @@
 import multiEntry from "rollup-plugin-multi-entry";
 import wasm from 'rollup-plugin-wasm'
+import nodeResolve from 'rollup-plugin-node-resolve';
+import amd from 'rollup-plugin-amd';
 
 export default {
   cache: false,
   input: [
-    'build/jquery-3.4.0.min.js', 
-    'build/jquery-ui.1.12.1.min.js', 
-    'build/r103.three.min.js',
-    'build/OrbitControls.js',
     'build/fourd.wasm',
+    'build/jquery-3.4.0.min.js',
     'build/fourd.js',
-    'build/animation.js',
     'dynamic-graph.js'
   ],
-  plugins: [multiEntry(), wasm({sync: ['build/fourd.wasm']})]
+  output: {
+    name: 'dist/dynamic-graph.min.js',
+    globals: {
+      'build/jquery-3.4.0.min.js': '$',
+      'three': 'THREE',
+      'build/FourDCtrl.js': 'FourDCtrl'
+    }
+  },
+  plugins: [
+    nodeResolve(), 
+    multiEntry(), 
+    amd(),
+    wasm()
+  ]
 };

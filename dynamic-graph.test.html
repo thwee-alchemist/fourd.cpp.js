@@ -8,13 +8,7 @@
     <link rel="stylesheet" href="build/bootstrap-slider.min.css">
     <link rel="stylesheet" href="build/fourd.css">
 
-    <script src="build/jquery-3.4.0.min.js"></script>
-    <script src="build/bootstrap.min.js"></script>
-    <script src="build/popper.min.js"></script>
-    <script src="build/jquery-ui.1.12.1.min.js"></script>
-    <script src="build/bootstrap-slider.min.js"></script>
-    <script type="text/javascript" src="build/require.js"></script>
-    <script type="text/javascript" src="dist/dynamic-graph.min.js"></script>
+    <script type="text/javascript" src="dist/dynamic-graph.bundle.min.js"></script>
     
   </head>
   <body>
@@ -52,24 +46,24 @@
     </div>
     
     <script type="text/javascript">
-      $('#add-vertex').click(function(){
+      document.querySelector('#add-vertex').onclick = function(){
         console.log(graph.add_vertex({cube: {size: 10, color: 0x000000}}));
-      })
+      }
 
-      $('#remove-vertex').click(function(){
+      document.querySelector('#remove-vertex').onclick = function(){
         console.log(graph.remove_vertex(parseInt(prompt('id?'))));
-      })
+      }
 
-      $('#add-edge').click(function(){
+      document.querySelector('#add-edge').onclick = function(){
         console.log(graph.add_edge(parseInt(prompt('source?')), parseInt(prompt('target?')), {color: 'white'}));
-      })
+      }
 
-      $('#remove-edge').click(function(){
+      document.querySelector('#remove-edge').onclick = function(){
         console.log(graph.remove_edge(parseInt(prompt('id?'))))
-      })
+      };
 
       function setup(){
-        console.log(graph.size)
+        console.log(graph.size())
       }
 
       function round(){
@@ -78,10 +72,10 @@
         requestAnimationFrame(round);
       }
 
-      $('#start-animation').click(function(){
+      document.querySelector('#start-animation').onclick = function(){
         setup()
         //round()
-      })
+      };
     </script>
   </body>
 </html>
