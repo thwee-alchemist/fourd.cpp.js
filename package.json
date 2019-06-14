@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/thwee-alchemist/fourd.cpp.js#readme",
   "dependencies": {
+    "directory-tree": "^2.2.3",
     "jquery-ui": "^1.12.1",
     "require": "^2.4.20",
     "rollup-plugin-ignore": "^1.0.5",

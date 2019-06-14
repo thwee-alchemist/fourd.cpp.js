@@ -41,14 +41,13 @@
             </ul>
           </p>
 
-
-
           <dynamic-graph 
             id="graph" 
             width="500" 
             height="500" 
             background="#58A7C6">
           </dynamic-graph>
+          
           <button id="add-vertex" class="btn btn-outline-primary">Add vertex</button>
           <button id="remove-vertex" class="btn btn-outline-danger">Remove vertex</button>
           <br>
@@ -77,19 +76,53 @@
         console.log(graph.remove_edge(parseInt(prompt('id?'))))
       };
 
+      var graph, vid, eid;
+      var vertices = 100
+      var removals = 10;
+      var additions = 10;
       function setup(){
-        console.log(graph.size)
+        graph = document.querySelector('#graph').graph;
+
+        var interval = setInterval(() => {
+          vid = graph.add_vertex({cube: {size: 10, color: '#FEA16F'}})
+          if(vid > vertices){
+            clearInterval(interval);
+          }
+        }, 100)
       }
 
       function round(){
-      
+        var removed = 0;
+        while(vid > 50 && removed < removals){
+          var proposed = Math.round(Math.random() * eid)
+          if(graph.E.get(proposed)){
+            graph.remove_edge(proposed);
+            removed++;
+          }
+        }
 
-        requestAnimationFrame(round);
+        var added = 0;
+        while(added < additions){
+          var source;
+          while(source === undefined){
+            var proposed = graph.V.get(Math.round(Math.random() * vid));
+            source = proposed ? proposed.id : undefined
+          }
+
+          var target;
+          while(target === undefined){
+            var proposed = graph.V.get(Math.round(Math.random() * vid));
+            target = proposed ? proposed.id : undefined;
+          }
+          eid = graph.add_edge(source, target, {color: 0});
+          added++;
+        }
+
       }
 
       document.querySelector('#start-animation').onclick = function(){
         setup()
-        //round()
+        setInterval(round, 100);
       };
     </script>
   </body>

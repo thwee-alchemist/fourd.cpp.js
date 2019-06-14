@@ -30,8 +30,5 @@ build: build/wasm/DynamicMatching.o src/fourd.cpp
 all: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/Vertex.h src/Edge.cpp src/Edge.h src/DMEdge.cpp src/DMEdge.h src/BarnesHutNode3.cpp src/BarnesHutNode3.h src/LayoutGraph.cpp src/LayoutGraph.h src/fourd.cpp
 	em++ -I ./src/gmtl -std=c++11 -s ASSERTIONS=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 src/FourDType.cpp src/Settings.cpp src/Vertex.cpp src/Edge.cpp src/BarnesHutNode3.cpp src/LayoutGraph.cpp src/fourd.cpp --bind -O0 -o build/fourd.js
 
-js: dynamic-graph.js build/FourDCtrl.js
-	rollup -c --file=dist/dynamic-graph.min.js --format=iife
-
 bundle: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js dynamic-graph.js
 	minify build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js dynamic-graph.js > dist/dynamic-graph.bundle.min.js

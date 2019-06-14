@@ -7,17 +7,10 @@ export default {
   cache: false,
   input: [
     'build/fourd.wasm',
-    'build/jquery-3.4.0.min.js',
-    'build/fourd.js',
-    'dynamic-graph.js'
+    'build/dynamic-graph.bundle.min.js'
   ],
   output: {
-    name: 'dist/dynamic-graph.min.js',
-    globals: {
-      'build/jquery-3.4.0.min.js': '$',
-      'three': 'THREE',
-      'build/FourDCtrl.js': 'FourDCtrl'
-    }
+    name: 'dist/dynamic-graph.bundle.with-wasm.min.js'
   },
   plugins: [
     nodeResolve(), 
