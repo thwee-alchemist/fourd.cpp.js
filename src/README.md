@@ -9,4 +9,3 @@ Once I've done that, I will have exhausted the paper this is based on, and be ab
 The Dynamic Matching Vertex inherits from the Vertex, since they both shared basic graph properties. This is the heart of fourd.cpp.js, which is compiled to web assembly, so it can be included in javascript. 
 
 Apart from the implementation in this folder, I am not proud of fourd.cpp.js, from a technical standpoint, because I don't yet understand the compilation and inclusion process for web assembly and javascript. It's currently a pain, but I don't have anything faster. 
-
