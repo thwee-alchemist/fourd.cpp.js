@@ -53,7 +53,12 @@ var ENVIRONMENT_HAS_NODE = false;
 var ENVIRONMENT_IS_SHELL = false;
 ENVIRONMENT_IS_WEB = typeof window === 'object';
 ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
-ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof require === 'function';
+// A web environment like Electron.js can have Node enabled, so we must
+// distinguish between Node-enabled environments and Node environments per se.
+// This will allow the former to do things like mount NODEFS.
+// Extended check using process.versions fixes issue #8816.
+// (Also makes redundant the original check that 'require' is a function.)
+ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string';
 ENVIRONMENT_IS_NODE = ENVIRONMENT_HAS_NODE && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
 ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 
@@ -539,6 +544,38 @@ if (typeof WebAssembly !== 'object') {
 }
 
 
+// In MINIMAL_RUNTIME, setValue() and getValue() are only available when building with safe heap enabled, for heap safety checking.
+// In traditional runtime, setValue() and getValue() are always available (although their use is highly discouraged due to perf penalties)
+
+/** @type {function(number, number, string, boolean=)} */
+function setValue(ptr, value, type, noSafe) {
+  type = type || 'i8';
+  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
+  if (noSafe) {
+    switch(type) {
+      case 'i1': HEAP8[((ptr)>>0)]=value; break;
+      case 'i8': HEAP8[((ptr)>>0)]=value; break;
+      case 'i16': HEAP16[((ptr)>>1)]=value; break;
+      case 'i32': HEAP32[((ptr)>>2)]=value; break;
+      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
+      case 'float': HEAPF32[((ptr)>>2)]=value; break;
+      case 'double': HEAPF64[((ptr)>>3)]=value; break;
+      default: abort('invalid type for setValue: ' + type);
+    }
+  } else {
+    switch(type) {
+      case 'i1': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 1); break;
+      case 'i8': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 1); break;
+      case 'i16': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 2); break;
+      case 'i32': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 4); break;
+      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],SAFE_HEAP_STORE(((ptr)|0), ((tempI64[0])|0), 4),SAFE_HEAP_STORE((((ptr)+(4))|0), ((tempI64[1])|0), 4)); break;
+      case 'float': SAFE_HEAP_STORE_D(((ptr)|0), Math_fround(value), 4); break;
+      case 'double': SAFE_HEAP_STORE_D(((ptr)|0), (+(value)), 8); break;
+      default: abort('invalid type for setValue: ' + type);
+    }
+  }
+}
+
 /** @type {function(number, string, boolean=)} */
 function getValue(ptr, type, noSafe) {
   type = type || 'i8';
@@ -568,6 +605,7 @@ function getValue(ptr, type, noSafe) {
   }
   return null;
 }
+
 
 function getSafeHeapType(bytes, isFloat) {
   switch (bytes) {
@@ -713,35 +751,6 @@ function ccall(ident, returnType, argTypes, args, opts) {
 function cwrap(ident, returnType, argTypes, opts) {
   return function() {
     return ccall(ident, returnType, argTypes, arguments, opts);
-  }
-}
-
-/** @type {function(number, number, string, boolean=)} */
-function setValue(ptr, value, type, noSafe) {
-  type = type || 'i8';
-  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
-  if (noSafe) {
-    switch(type) {
-      case 'i1': HEAP8[((ptr)>>0)]=value; break;
-      case 'i8': HEAP8[((ptr)>>0)]=value; break;
-      case 'i16': HEAP16[((ptr)>>1)]=value; break;
-      case 'i32': HEAP32[((ptr)>>2)]=value; break;
-      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
-      case 'float': HEAPF32[((ptr)>>2)]=value; break;
-      case 'double': HEAPF64[((ptr)>>3)]=value; break;
-      default: abort('invalid type for setValue: ' + type);
-    }
-  } else {
-    switch(type) {
-      case 'i1': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 1); break;
-      case 'i8': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 1); break;
-      case 'i16': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 2); break;
-      case 'i32': SAFE_HEAP_STORE(((ptr)|0), ((value)|0), 4); break;
-      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],SAFE_HEAP_STORE(((ptr)|0), ((tempI64[0])|0), 4),SAFE_HEAP_STORE((((ptr)+(4))|0), ((tempI64[1])|0), 4)); break;
-      case 'float': SAFE_HEAP_STORE_D(((ptr)|0), Math_fround(value), 4); break;
-      case 'double': SAFE_HEAP_STORE_D(((ptr)|0), (+(value)), 8); break;
-      default: abort('invalid type for setValue: ' + type);
-    }
   }
 }
 
@@ -1329,25 +1338,24 @@ assert(typeof Int32Array !== 'undefined' && typeof Float64Array !== 'undefined' 
 
 
 
-
-// Use a provided buffer, if there is one, or else allocate a new one
-if (Module['buffer']) {
-  buffer = Module['buffer'];
-  assert(buffer.byteLength === INITIAL_TOTAL_MEMORY, 'provided buffer should be ' + INITIAL_TOTAL_MEMORY + ' bytes, but it is ' + buffer.byteLength);
-} else {
-  // Use a WebAssembly memory where available
-  if (typeof WebAssembly === 'object' && typeof WebAssembly.Memory === 'function') {
-    assert(INITIAL_TOTAL_MEMORY % WASM_PAGE_SIZE === 0);
-    wasmMemory = new WebAssembly.Memory({ 'initial': INITIAL_TOTAL_MEMORY / WASM_PAGE_SIZE });
-    buffer = wasmMemory.buffer;
-  } else
-  {
-    buffer = new ArrayBuffer(INITIAL_TOTAL_MEMORY);
+  if (Module['wasmMemory']) {
+    wasmMemory = Module['wasmMemory'];
+  } else {
+    wasmMemory = new WebAssembly.Memory({
+      'initial': INITIAL_TOTAL_MEMORY / WASM_PAGE_SIZE
+    });
   }
-  assert(buffer.byteLength === INITIAL_TOTAL_MEMORY);
-}
-updateGlobalBufferViews();
 
+
+if (wasmMemory) {
+  buffer = wasmMemory.buffer;
+}
+
+// If the user provides an incorrect length, just use that length instead rather than providing the user to
+// specifically provide the memory length with Module['TOTAL_MEMORY'].
+INITIAL_TOTAL_MEMORY = buffer.byteLength;
+assert(INITIAL_TOTAL_MEMORY % WASM_PAGE_SIZE === 0);
+updateGlobalBufferViews();
 
 HEAP32[DYNAMICTOP_PTR>>2] = DYNAMIC_BASE;
 
@@ -1360,10 +1368,13 @@ function writeStackCookie() {
 }
 
 function checkStackCookie() {
-  if (HEAPU32[(STACK_MAX >> 2)-1] != 0x02135467 || HEAPU32[(STACK_MAX >> 2)-2] != 0x89BACDFE) {
-    abort('Stack overflow! Stack cookie has been overwritten, expected hex dwords 0x89BACDFE and 0x02135467, but received 0x' + HEAPU32[(STACK_MAX >> 2)-2].toString(16) + ' ' + HEAPU32[(STACK_MAX >> 2)-1].toString(16));
+  var cookie1 = HEAPU32[(STACK_MAX >> 2)-1];
+  var cookie2 = HEAPU32[(STACK_MAX >> 2)-2];
+  if (cookie1 != 0x02135467 || cookie2 != 0x89BACDFE) {
+    abort('Stack overflow! Stack cookie has been overwritten, expected hex dwords 0x89BACDFE and 0x02135467, but received 0x' + cookie2.toString(16) + ' ' + cookie1.toString(16));
   }
   // Also test the global address 0 for integrity.
+  // We don't do this with ASan because ASan does its own checks for this.
   if (HEAP32[0] !== 0x63736d65 /* 'emsc' */) abort('Runtime error: The application has corrupted its heap memory area (address zero)!');
 }
 
@@ -1421,9 +1432,9 @@ function preRun() {
   callRuntimeCallbacks(__ATPRERUN__);
 }
 
-function ensureInitRuntime() {
+function initRuntime() {
   checkStackCookie();
-  if (runtimeInitialized) return;
+  assert(!runtimeInitialized);
   runtimeInitialized = true;
   if (!Module["noFSInit"] && !FS.init.initialized) FS.init();
 TTY.init();
@@ -1671,6 +1682,8 @@ function getBinaryPromise() {
   });
 }
 
+
+
 // Create the wasm instance.
 // Receives the wasm imports, returns the exports.
 function createWasm(env) {
@@ -1696,6 +1709,7 @@ function createWasm(env) {
   }
   addRunDependency('wasm-instantiate');
 
+
   // Async compilation can be confusing when an error on the page overwrites Module
   // (for example, if the order of elements is wrong, and the one defining Module is
   // later), so we save Module and check it later.
@@ -1709,6 +1723,7 @@ function createWasm(env) {
       // When the regression is fixed, can restore the above USE_PTHREADS-enabled path.
     receiveInstance(output['instance']);
   }
+
 
   function instantiateArrayBuffer(receiver) {
     return getBinaryPromise().then(function(binary) {
@@ -1725,14 +1740,16 @@ function createWasm(env) {
         typeof WebAssembly.instantiateStreaming === 'function' &&
         !isDataURI(wasmBinaryFile) &&
         typeof fetch === 'function') {
-      return WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
-        .then(receiveInstantiatedSource, function(reason) {
-          // We expect the most common failure cause to be a bad MIME type for the binary,
-          // in which case falling back to ArrayBuffer instantiation should work.
-          err('wasm streaming compile failed: ' + reason);
-          err('falling back to ArrayBuffer instantiation');
-          instantiateArrayBuffer(receiveInstantiatedSource);
-        });
+      fetch(wasmBinaryFile, { credentials: 'same-origin' }).then(function (response) {
+        return WebAssembly.instantiateStreaming(response, info)
+          .then(receiveInstantiatedSource, function(reason) {
+            // We expect the most common failure cause to be a bad MIME type for the binary,
+            // in which case falling back to ArrayBuffer instantiation should work.
+            err('wasm streaming compile failed: ' + reason);
+            err('falling back to ArrayBuffer instantiation');
+            instantiateArrayBuffer(receiveInstantiatedSource);
+          });
+      });
     } else {
       return instantiateArrayBuffer(receiveInstantiatedSource);
     }
@@ -1742,7 +1759,8 @@ function createWasm(env) {
   // to any other async startup actions they are performing.
   if (Module['instantiateWasm']) {
     try {
-      return Module['instantiateWasm'](info, receiveInstance);
+      var exports = Module['instantiateWasm'](info, receiveInstance);
+      return exports;
     } catch(e) {
       err('Module.instantiateWasm callback failed with error: ' + e);
       return false;
@@ -1777,6 +1795,10 @@ Module['asm'] = function(global, env, providedBuffer) {
   assert(exports, 'binaryen setup failed (no wasm support?)');
   return exports;
 };
+
+// Globals used by JS i64 conversions
+var tempDouble;
+var tempI64;
 
 // === Body ===
 
@@ -1830,103 +1852,44 @@ function copyTempDouble(ptr) {
     }
 
   
+  var ___exception_infos={};
   
-  function ___cxa_free_exception(ptr) {
-      try {
-        return _free(ptr);
-      } catch(e) { // XXX FIXME
-        err('exception during cxa_free_exception: ' + e);
+  var ___exception_caught= [];
+  
+  function ___exception_addRef(ptr) {
+      if (!ptr) return;
+      var info = ___exception_infos[ptr];
+      info.refcount++;
+    }
+  
+  function ___exception_deAdjust(adjusted) {
+      if (!adjusted || ___exception_infos[adjusted]) return adjusted;
+      for (var key in ___exception_infos) {
+        var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
+        var adj = ___exception_infos[ptr].adjusted;
+        var len = adj.length;
+        for (var i = 0; i < len; i++) {
+          if (adj[i] === adjusted) {
+            return ptr;
+          }
+        }
       }
-    }var EXCEPTIONS={last:0,caught:[],infos:{},deAdjust:function (adjusted) {
-        if (!adjusted || EXCEPTIONS.infos[adjusted]) return adjusted;
-        for (var key in EXCEPTIONS.infos) {
-          var ptr = +key; // the iteration key is a string, and if we throw this, it must be an integer as that is what we look for
-          var adj = EXCEPTIONS.infos[ptr].adjusted;
-          var len = adj.length;
-          for (var i = 0; i < len; i++) {
-            if (adj[i] === adjusted) {
-              return ptr;
-            }
-          }
-        }
-        return adjusted;
-      },addRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        info.refcount++;
-      },decRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        assert(info.refcount > 0);
-        info.refcount--;
-        // A rethrown exception can reach refcount 0; it must not be discarded
-        // Its next handler will clear the rethrown flag and addRef it, prior to
-        // final decRef and destruction here
-        if (info.refcount === 0 && !info.rethrown) {
-          if (info.destructor) {
-            Module['dynCall_vi'](info.destructor, ptr);
-          }
-          delete EXCEPTIONS.infos[ptr];
-          ___cxa_free_exception(ptr);
-        }
-      },clearRef:function (ptr) {
-        if (!ptr) return;
-        var info = EXCEPTIONS.infos[ptr];
-        info.refcount = 0;
-      }};function ___cxa_begin_catch(ptr) {
-      var info = EXCEPTIONS.infos[ptr];
+      return adjusted;
+    }function ___cxa_begin_catch(ptr) {
+      var info = ___exception_infos[ptr];
       if (info && !info.caught) {
         info.caught = true;
         __ZSt18uncaught_exceptionv.uncaught_exception--;
       }
       if (info) info.rethrown = false;
-      EXCEPTIONS.caught.push(ptr);
-      EXCEPTIONS.addRef(EXCEPTIONS.deAdjust(ptr));
+      ___exception_caught.push(ptr);
+      ___exception_addRef(___exception_deAdjust(ptr));
       return ptr;
     }
 
   
-  
-  function ___resumeException(ptr) {
-      if (!EXCEPTIONS.last) { EXCEPTIONS.last = ptr; }
-      throw ptr + " - Exception catching is disabled, this exception cannot be caught. Compile with -s DISABLE_EXCEPTION_CATCHING=0 or DISABLE_EXCEPTION_CATCHING=2 to catch.";
-    }function ___cxa_find_matching_catch() {
-      var thrown = EXCEPTIONS.last;
-      if (!thrown) {
-        // just pass through the null ptr
-        return ((setTempRet0(0),0)|0);
-      }
-      var info = EXCEPTIONS.infos[thrown];
-      var throwntype = info.type;
-      if (!throwntype) {
-        // just pass through the thrown ptr
-        return ((setTempRet0(0),thrown)|0);
-      }
-      var typeArray = Array.prototype.slice.call(arguments);
-  
-      var pointer = Module['___cxa_is_pointer_type'](throwntype);
-      // can_catch receives a **, add indirection
-      if (!___cxa_find_matching_catch.buffer) ___cxa_find_matching_catch.buffer = _malloc(4);
-      SAFE_HEAP_STORE(((___cxa_find_matching_catch.buffer)|0), ((thrown)|0), 4);
-      thrown = ___cxa_find_matching_catch.buffer;
-      // The different catch blocks are denoted by different types.
-      // Due to inheritance, those types may not precisely match the
-      // type of the thrown object. Find one which matches, and
-      // return the type of the catch block which should be called.
-      for (var i = 0; i < typeArray.length; i++) {
-        if (typeArray[i] && Module['___cxa_can_catch'](typeArray[i], throwntype, thrown)) {
-          thrown = ((SAFE_HEAP_LOAD(((thrown)|0), 4, 0))|0); // undo indirection
-          info.adjusted.push(thrown);
-          return ((setTempRet0(typeArray[i]),thrown)|0);
-        }
-      }
-      // Shouldn't happen unless we have bogus data in typeArray
-      // or encounter a type for which emscripten doesn't have suitable
-      // typeinfo defined. Best-efforts match just in case.
-      thrown = ((SAFE_HEAP_LOAD(((thrown)|0), 4, 0))|0); // undo indirection
-      return ((setTempRet0(throwntype),thrown)|0);
-    }function ___cxa_throw(ptr, type, destructor) {
-      EXCEPTIONS.infos[ptr] = {
+  var ___exception_last=0;function ___cxa_throw(ptr, type, destructor) {
+      ___exception_infos[ptr] = {
         ptr: ptr,
         adjusted: [ptr],
         type: type,
@@ -1935,7 +1898,7 @@ function copyTempDouble(ptr) {
         caught: false,
         rethrown: false
       };
-      EXCEPTIONS.last = ptr;
+      ___exception_last = ptr;
       if (!("uncaught_exception" in __ZSt18uncaught_exceptionv)) {
         __ZSt18uncaught_exceptionv.uncaught_exception = 1;
       } else {
@@ -1965,10 +1928,10 @@ function copyTempDouble(ptr) {
 
   
   
-  var PATH={splitPath:function (filename) {
+  var PATH={splitPath:function(filename) {
         var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
         return splitPathRe.exec(filename).slice(1);
-      },normalizeArray:function (parts, allowAboveRoot) {
+      },normalizeArray:function(parts, allowAboveRoot) {
         // if the path tries to go above the root, `up` ends up > 0
         var up = 0;
         for (var i = parts.length - 1; i >= 0; i--) {
@@ -1990,7 +1953,7 @@ function copyTempDouble(ptr) {
           }
         }
         return parts;
-      },normalize:function (path) {
+      },normalize:function(path) {
         var isAbsolute = path.charAt(0) === '/',
             trailingSlash = path.substr(-1) === '/';
         // Normalize the path
@@ -2004,7 +1967,7 @@ function copyTempDouble(ptr) {
           path += '/';
         }
         return (isAbsolute ? '/' : '') + path;
-      },dirname:function (path) {
+      },dirname:function(path) {
         var result = PATH.splitPath(path),
             root = result[0],
             dir = result[1];
@@ -2017,23 +1980,23 @@ function copyTempDouble(ptr) {
           dir = dir.substr(0, dir.length - 1);
         }
         return root + dir;
-      },basename:function (path) {
+      },basename:function(path) {
         // EMSCRIPTEN return '/'' for '/', not an empty string
         if (path === '/') return '/';
         var lastSlash = path.lastIndexOf('/');
         if (lastSlash === -1) return path;
         return path.substr(lastSlash+1);
-      },extname:function (path) {
+      },extname:function(path) {
         return PATH.splitPath(path)[3];
-      },join:function () {
+      },join:function() {
         var paths = Array.prototype.slice.call(arguments, 0);
         return PATH.normalize(paths.join('/'));
-      },join2:function (l, r) {
+      },join2:function(l, r) {
         return PATH.normalize(l + '/' + r);
       }};
   
   
-  var PATH_FS={resolve:function () {
+  var PATH_FS={resolve:function() {
         var resolvedPath = '',
           resolvedAbsolute = false;
         for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
@@ -2053,7 +2016,7 @@ function copyTempDouble(ptr) {
           return !!p;
         }), !resolvedAbsolute).join('/');
         return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-      },relative:function (from, to) {
+      },relative:function(from, to) {
         from = PATH_FS.resolve(from).substr(1);
         to = PATH_FS.resolve(to).substr(1);
         function trim(arr) {
@@ -2095,7 +2058,7 @@ function copyTempDouble(ptr) {
         //   // with text files until FS.init can be refactored.
         //   process['stdin']['setEncoding']('utf8');
         // }
-      },shutdown:function () {
+      },shutdown:function() {
         // https://github.com/emscripten-core/emscripten/pull/1555
         // if (ENVIRONMENT_IS_NODE) {
         //   // inolen: any idea as to why node -e 'process.stdin.read()' wouldn't exit immediately (with process.stdin being a tty)?
@@ -2105,22 +2068,22 @@ function copyTempDouble(ptr) {
         //   // isaacs: do process.stdin.pause() and i'd think it'd probably close the pending call
         //   process['stdin']['pause']();
         // }
-      },register:function (dev, ops) {
+      },register:function(dev, ops) {
         TTY.ttys[dev] = { input: [], output: [], ops: ops };
         FS.registerDevice(dev, TTY.stream_ops);
-      },stream_ops:{open:function (stream) {
+      },stream_ops:{open:function(stream) {
           var tty = TTY.ttys[stream.node.rdev];
           if (!tty) {
             throw new FS.ErrnoError(19);
           }
           stream.tty = tty;
           stream.seekable = false;
-        },close:function (stream) {
+        },close:function(stream) {
           // flush any pending line data
           stream.tty.ops.flush(stream.tty);
-        },flush:function (stream) {
+        },flush:function(stream) {
           stream.tty.ops.flush(stream.tty);
-        },read:function (stream, buffer, offset, length, pos /* ignored */) {
+        },read:function(stream, buffer, offset, length, pos /* ignored */) {
           if (!stream.tty || !stream.tty.ops.get_char) {
             throw new FS.ErrnoError(6);
           }
@@ -2143,7 +2106,7 @@ function copyTempDouble(ptr) {
             stream.node.timestamp = Date.now();
           }
           return bytesRead;
-        },write:function (stream, buffer, offset, length, pos) {
+        },write:function(stream, buffer, offset, length, pos) {
           if (!stream.tty || !stream.tty.ops.put_char) {
             throw new FS.ErrnoError(6);
           }
@@ -2158,7 +2121,7 @@ function copyTempDouble(ptr) {
             stream.node.timestamp = Date.now();
           }
           return i;
-        }},default_tty_ops:{get_char:function (tty) {
+        }},default_tty_ops:{get_char:function(tty) {
           if (!tty.input.length) {
             var result = null;
             if (ENVIRONMENT_IS_NODE) {
@@ -2215,35 +2178,35 @@ function copyTempDouble(ptr) {
             tty.input = intArrayFromString(result, true);
           }
           return tty.input.shift();
-        },put_char:function (tty, val) {
+        },put_char:function(tty, val) {
           if (val === null || val === 10) {
             out(UTF8ArrayToString(tty.output, 0));
             tty.output = [];
           } else {
             if (val != 0) tty.output.push(val); // val == 0 would cut text output off in the middle.
           }
-        },flush:function (tty) {
+        },flush:function(tty) {
           if (tty.output && tty.output.length > 0) {
             out(UTF8ArrayToString(tty.output, 0));
             tty.output = [];
           }
-        }},default_tty1_ops:{put_char:function (tty, val) {
+        }},default_tty1_ops:{put_char:function(tty, val) {
           if (val === null || val === 10) {
             err(UTF8ArrayToString(tty.output, 0));
             tty.output = [];
           } else {
             if (val != 0) tty.output.push(val);
           }
-        },flush:function (tty) {
+        },flush:function(tty) {
           if (tty.output && tty.output.length > 0) {
             err(UTF8ArrayToString(tty.output, 0));
             tty.output = [];
           }
         }}};
   
-  var MEMFS={ops_table:null,mount:function (mount) {
+  var MEMFS={ops_table:null,mount:function(mount) {
         return MEMFS.createNode(null, '/', 16384 | 511 /* 0777 */, 0);
-      },createNode:function (parent, name, mode, dev) {
+      },createNode:function(parent, name, mode, dev) {
         if (FS.isBlkdev(mode) || FS.isFIFO(mode)) {
           // no supported
           throw new FS.ErrnoError(1);
@@ -2323,18 +2286,18 @@ function copyTempDouble(ptr) {
           parent.contents[name] = node;
         }
         return node;
-      },getFileDataAsRegularArray:function (node) {
+      },getFileDataAsRegularArray:function(node) {
         if (node.contents && node.contents.subarray) {
           var arr = [];
           for (var i = 0; i < node.usedBytes; ++i) arr.push(node.contents[i]);
           return arr; // Returns a copy of the original data.
         }
         return node.contents; // No-op, the file contents are already in a JS array. Return as-is.
-      },getFileDataAsTypedArray:function (node) {
+      },getFileDataAsTypedArray:function(node) {
         if (!node.contents) return new Uint8Array;
         if (node.contents.subarray) return node.contents.subarray(0, node.usedBytes); // Make sure to not return excess unused bytes.
         return new Uint8Array(node.contents);
-      },expandFileStorage:function (node, newCapacity) {
+      },expandFileStorage:function(node, newCapacity) {
         var prevCapacity = node.contents ? node.contents.length : 0;
         if (prevCapacity >= newCapacity) return; // No need to expand, the storage was already large enough.
         // Don't expand strictly to the given requested limit if it's only a very small increase, but instead geometrically grow capacity.
@@ -2347,7 +2310,7 @@ function copyTempDouble(ptr) {
         node.contents = new Uint8Array(newCapacity); // Allocate new storage.
         if (node.usedBytes > 0) node.contents.set(oldContents.subarray(0, node.usedBytes), 0); // Copy old data over to the new storage.
         return;
-      },resizeFileStorage:function (node, newSize) {
+      },resizeFileStorage:function(node, newSize) {
         if (node.usedBytes == newSize) return;
         if (newSize == 0) {
           node.contents = null; // Fully decommit when requesting a resize to zero.
@@ -2368,7 +2331,7 @@ function copyTempDouble(ptr) {
         if (node.contents.length > newSize) node.contents.length = newSize;
         else while (node.contents.length < newSize) node.contents.push(0);
         node.usedBytes = newSize;
-      },node_ops:{getattr:function (node) {
+      },node_ops:{getattr:function(node) {
           var attr = {};
           // device numbers reuse inode numbers.
           attr.dev = FS.isChrdev(node.mode) ? node.id : 1;
@@ -2395,7 +2358,7 @@ function copyTempDouble(ptr) {
           attr.blksize = 4096;
           attr.blocks = Math.ceil(attr.size / attr.blksize);
           return attr;
-        },setattr:function (node, attr) {
+        },setattr:function(node, attr) {
           if (attr.mode !== undefined) {
             node.mode = attr.mode;
           }
@@ -2405,11 +2368,11 @@ function copyTempDouble(ptr) {
           if (attr.size !== undefined) {
             MEMFS.resizeFileStorage(node, attr.size);
           }
-        },lookup:function (parent, name) {
+        },lookup:function(parent, name) {
           throw FS.genericErrors[2];
-        },mknod:function (parent, name, mode, dev) {
+        },mknod:function(parent, name, mode, dev) {
           return MEMFS.createNode(parent, name, mode, dev);
-        },rename:function (old_node, new_dir, new_name) {
+        },rename:function(old_node, new_dir, new_name) {
           // if we're overwriting a directory at new_name, make sure it's empty.
           if (FS.isDir(old_node.mode)) {
             var new_node;
@@ -2428,15 +2391,15 @@ function copyTempDouble(ptr) {
           old_node.name = new_name;
           new_dir.contents[new_name] = old_node;
           old_node.parent = new_dir;
-        },unlink:function (parent, name) {
+        },unlink:function(parent, name) {
           delete parent.contents[name];
-        },rmdir:function (parent, name) {
+        },rmdir:function(parent, name) {
           var node = FS.lookupNode(parent, name);
           for (var i in node.contents) {
             throw new FS.ErrnoError(39);
           }
           delete parent.contents[name];
-        },readdir:function (node) {
+        },readdir:function(node) {
           var entries = ['.', '..']
           for (var key in node.contents) {
             if (!node.contents.hasOwnProperty(key)) {
@@ -2445,16 +2408,16 @@ function copyTempDouble(ptr) {
             entries.push(key);
           }
           return entries;
-        },symlink:function (parent, newname, oldpath) {
+        },symlink:function(parent, newname, oldpath) {
           var node = MEMFS.createNode(parent, newname, 511 /* 0777 */ | 40960, 0);
           node.link = oldpath;
           return node;
-        },readlink:function (node) {
+        },readlink:function(node) {
           if (!FS.isLink(node.mode)) {
             throw new FS.ErrnoError(22);
           }
           return node.link;
-        }},stream_ops:{read:function (stream, buffer, offset, length, position) {
+        }},stream_ops:{read:function(stream, buffer, offset, length, position) {
           var contents = stream.node.contents;
           if (position >= stream.node.usedBytes) return 0;
           var size = Math.min(stream.node.usedBytes - position, length);
@@ -2465,7 +2428,7 @@ function copyTempDouble(ptr) {
             for (var i = 0; i < size; i++) buffer[offset + i] = contents[position + i];
           }
           return size;
-        },write:function (stream, buffer, offset, length, position, canOwn) {
+        },write:function(stream, buffer, offset, length, position, canOwn) {
           // If memory can grow, we don't want to hold on to references of
           // the memory Buffer, as they may get invalidated. That means
           // we need to do a copy here.
@@ -2508,7 +2471,7 @@ function copyTempDouble(ptr) {
           }
           node.usedBytes = Math.max(node.usedBytes, position+length);
           return length;
-        },llseek:function (stream, offset, whence) {
+        },llseek:function(stream, offset, whence) {
           var position = offset;
           if (whence === 1) {  // SEEK_CUR.
             position += stream.position;
@@ -2521,10 +2484,10 @@ function copyTempDouble(ptr) {
             throw new FS.ErrnoError(22);
           }
           return position;
-        },allocate:function (stream, offset, length) {
+        },allocate:function(stream, offset, length) {
           MEMFS.expandFileStorage(stream.node, offset + length);
           stream.node.usedBytes = Math.max(stream.node.usedBytes, offset + length);
-        },mmap:function (stream, buffer, offset, length, position, prot, flags) {
+        },mmap:function(stream, buffer, offset, length, position, prot, flags) {
           if (!FS.isFile(stream.node.mode)) {
             throw new FS.ErrnoError(19);
           }
@@ -2555,7 +2518,7 @@ function copyTempDouble(ptr) {
             buffer.set(contents, ptr);
           }
           return { ptr: ptr, allocated: allocated };
-        },msync:function (stream, buffer, offset, length, mmapFlags) {
+        },msync:function(stream, buffer, offset, length, mmapFlags) {
           if (!FS.isFile(stream.node.mode)) {
             throw new FS.ErrnoError(19);
           }
@@ -2569,16 +2532,16 @@ function copyTempDouble(ptr) {
           return 0;
         }}};
   
-  var IDBFS={dbs:{},indexedDB:function () {
+  var IDBFS={dbs:{},indexedDB:function() {
         if (typeof indexedDB !== 'undefined') return indexedDB;
         var ret = null;
         if (typeof window === 'object') ret = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
         assert(ret, 'IDBFS used, but indexedDB not supported');
         return ret;
-      },DB_VERSION:21,DB_STORE_NAME:"FILE_DATA",mount:function (mount) {
+      },DB_VERSION:21,DB_STORE_NAME:"FILE_DATA",mount:function(mount) {
         // reuse all of the core MEMFS functionality
         return MEMFS.mount.apply(null, arguments);
-      },syncfs:function (mount, populate, callback) {
+      },syncfs:function(mount, populate, callback) {
         IDBFS.getLocalSet(mount, function(err, local) {
           if (err) return callback(err);
   
@@ -2591,7 +2554,7 @@ function copyTempDouble(ptr) {
             IDBFS.reconcile(src, dst, callback);
           });
         });
-      },getDB:function (name, callback) {
+      },getDB:function(name, callback) {
         // check the cache first
         var db = IDBFS.dbs[name];
         if (db) {
@@ -2634,7 +2597,7 @@ function copyTempDouble(ptr) {
           callback(this.error);
           e.preventDefault();
         };
-      },getLocalSet:function (mount, callback) {
+      },getLocalSet:function(mount, callback) {
         var entries = {};
   
         function isRealDir(p) {
@@ -2666,7 +2629,7 @@ function copyTempDouble(ptr) {
         }
   
         return callback(null, { type: 'local', entries: entries });
-      },getRemoteSet:function (mount, callback) {
+      },getRemoteSet:function(mount, callback) {
         var entries = {};
   
         IDBFS.getDB(mount.mountpoint, function(err, db) {
@@ -2697,7 +2660,7 @@ function copyTempDouble(ptr) {
             return callback(e);
           }
         });
-      },loadLocalEntry:function (path, callback) {
+      },loadLocalEntry:function(path, callback) {
         var stat, node;
   
         try {
@@ -2718,7 +2681,7 @@ function copyTempDouble(ptr) {
         } else {
           return callback(new Error('node type not supported'));
         }
-      },storeLocalEntry:function (path, entry, callback) {
+      },storeLocalEntry:function(path, entry, callback) {
         try {
           if (FS.isDir(entry.mode)) {
             FS.mkdir(path, entry.mode);
@@ -2735,7 +2698,7 @@ function copyTempDouble(ptr) {
         }
   
         callback(null);
-      },removeLocalEntry:function (path, callback) {
+      },removeLocalEntry:function(path, callback) {
         try {
           var lookup = FS.lookupPath(path);
           var stat = FS.stat(path);
@@ -2750,28 +2713,28 @@ function copyTempDouble(ptr) {
         }
   
         callback(null);
-      },loadRemoteEntry:function (store, path, callback) {
+      },loadRemoteEntry:function(store, path, callback) {
         var req = store.get(path);
         req.onsuccess = function(event) { callback(null, event.target.result); };
         req.onerror = function(e) {
           callback(this.error);
           e.preventDefault();
         };
-      },storeRemoteEntry:function (store, path, entry, callback) {
+      },storeRemoteEntry:function(store, path, entry, callback) {
         var req = store.put(entry, path);
         req.onsuccess = function() { callback(null); };
         req.onerror = function(e) {
           callback(this.error);
           e.preventDefault();
         };
-      },removeRemoteEntry:function (store, path, callback) {
+      },removeRemoteEntry:function(store, path, callback) {
         var req = store.delete(path);
         req.onsuccess = function() { callback(null); };
         req.onerror = function(e) {
           callback(this.error);
           e.preventDefault();
         };
-      },reconcile:function (src, dst, callback) {
+      },reconcile:function(src, dst, callback) {
         var total = 0;
   
         var create = [];
@@ -2799,27 +2762,26 @@ function copyTempDouble(ptr) {
         }
   
         var errored = false;
-        var completed = 0;
         var db = src.type === 'remote' ? src.db : dst.db;
         var transaction = db.transaction([IDBFS.DB_STORE_NAME], 'readwrite');
         var store = transaction.objectStore(IDBFS.DB_STORE_NAME);
   
         function done(err) {
-          if (err) {
-            if (!done.errored) {
-              done.errored = true;
-              return callback(err);
-            }
-            return;
-          }
-          if (++completed >= total) {
-            return callback(null);
+          if (err && !errored) {
+            errored = true;
+            return callback(err);
           }
         };
   
         transaction.onerror = function(e) {
           done(this.error);
           e.preventDefault();
+        };
+  
+        transaction.oncomplete = function(e) {
+          if (!errored) {
+            callback(null);
+          }
         };
   
         // sort paths in ascending order so directory entries are created
@@ -2849,7 +2811,7 @@ function copyTempDouble(ptr) {
         });
       }};
   
-  var NODEFS={isWindows:false,staticInit:function () {
+  var NODEFS={isWindows:false,staticInit:function() {
         NODEFS.isWindows = !!process.platform.match(/^win/);
         var flags = process["binding"]("constants");
         // Node.js 4 compatibility: it has no namespaces for constants
@@ -2905,7 +2867,7 @@ function copyTempDouble(ptr) {
         parts.push(node.mount.opts.root);
         parts.reverse();
         return PATH.join.apply(null, parts);
-      },flagsForNode:function (flags) {
+      },flagsForNode:function(flags) {
         flags &= ~0x200000 /*O_PATH*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
         flags &= ~0x800 /*O_NONBLOCK*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
         flags &= ~0x8000 /*O_LARGEFILE*/; // Ignore this flag from musl, otherwise node.js fails to open the file.
@@ -2923,7 +2885,7 @@ function copyTempDouble(ptr) {
         } else {
           throw new FS.ErrnoError(22);
         }
-      },node_ops:{getattr:function (node) {
+      },node_ops:{getattr:function(node) {
           var path = NODEFS.realPath(node);
           var stat;
           try {
@@ -2955,7 +2917,7 @@ function copyTempDouble(ptr) {
             blksize: stat.blksize,
             blocks: stat.blocks
           };
-        },setattr:function (node, attr) {
+        },setattr:function(node, attr) {
           var path = NODEFS.realPath(node);
           try {
             if (attr.mode !== undefined) {
@@ -3002,7 +2964,7 @@ function copyTempDouble(ptr) {
             if (!e.code) throw e;
             throw new FS.ErrnoError(-e.errno);
           }
-        },unlink:function (parent, name) {
+        },unlink:function(parent, name) {
           var path = PATH.join2(NODEFS.realPath(parent), name);
           try {
             fs.unlinkSync(path);
@@ -3010,7 +2972,7 @@ function copyTempDouble(ptr) {
             if (!e.code) throw e;
             throw new FS.ErrnoError(-e.errno);
           }
-        },rmdir:function (parent, name) {
+        },rmdir:function(parent, name) {
           var path = PATH.join2(NODEFS.realPath(parent), name);
           try {
             fs.rmdirSync(path);
@@ -3018,7 +2980,7 @@ function copyTempDouble(ptr) {
             if (!e.code) throw e;
             throw new FS.ErrnoError(-e.errno);
           }
-        },readdir:function (node) {
+        },readdir:function(node) {
           var path = NODEFS.realPath(node);
           try {
             return fs.readdirSync(path);
@@ -3026,7 +2988,7 @@ function copyTempDouble(ptr) {
             if (!e.code) throw e;
             throw new FS.ErrnoError(-e.errno);
           }
-        },symlink:function (parent, newName, oldPath) {
+        },symlink:function(parent, newName, oldPath) {
           var newPath = PATH.join2(NODEFS.realPath(parent), newName);
           try {
             fs.symlinkSync(oldPath, newPath);
@@ -3034,7 +2996,7 @@ function copyTempDouble(ptr) {
             if (!e.code) throw e;
             throw new FS.ErrnoError(-e.errno);
           }
-        },readlink:function (node) {
+        },readlink:function(node) {
           var path = NODEFS.realPath(node);
           try {
             path = fs.readlinkSync(path);
@@ -3160,7 +3122,7 @@ function copyTempDouble(ptr) {
           parent.contents[name] = node;
         }
         return node;
-      },node_ops:{getattr:function (node) {
+      },node_ops:{getattr:function(node) {
           return {
             dev: 1,
             ino: undefined,
@@ -3176,24 +3138,24 @@ function copyTempDouble(ptr) {
             blksize: 4096,
             blocks: Math.ceil(node.size / 4096),
           };
-        },setattr:function (node, attr) {
+        },setattr:function(node, attr) {
           if (attr.mode !== undefined) {
             node.mode = attr.mode;
           }
           if (attr.timestamp !== undefined) {
             node.timestamp = attr.timestamp;
           }
-        },lookup:function (parent, name) {
+        },lookup:function(parent, name) {
           throw new FS.ErrnoError(2);
         },mknod:function (parent, name, mode, dev) {
           throw new FS.ErrnoError(1);
         },rename:function (oldNode, newDir, newName) {
           throw new FS.ErrnoError(1);
-        },unlink:function (parent, name) {
+        },unlink:function(parent, name) {
           throw new FS.ErrnoError(1);
-        },rmdir:function (parent, name) {
+        },rmdir:function(parent, name) {
           throw new FS.ErrnoError(1);
-        },readdir:function (node) {
+        },readdir:function(node) {
           var entries = ['.', '..'];
           for (var key in node.contents) {
             if (!node.contents.hasOwnProperty(key)) {
@@ -3202,9 +3164,9 @@ function copyTempDouble(ptr) {
             entries.push(key);
           }
           return entries;
-        },symlink:function (parent, newName, oldPath) {
+        },symlink:function(parent, newName, oldPath) {
           throw new FS.ErrnoError(1);
-        },readlink:function (node) {
+        },readlink:function(node) {
           throw new FS.ErrnoError(1);
         }},stream_ops:{read:function (stream, buffer, offset, length, position) {
           if (position >= stream.node.size) return 0;
@@ -3231,10 +3193,10 @@ function copyTempDouble(ptr) {
   
   var ERRNO_MESSAGES={0:"Success",1:"Not super-user",2:"No such file or directory",3:"No such process",4:"Interrupted system call",5:"I/O error",6:"No such device or address",7:"Arg list too long",8:"Exec format error",9:"Bad file number",10:"No children",11:"No more processes",12:"Not enough core",13:"Permission denied",14:"Bad address",15:"Block device required",16:"Mount device busy",17:"File exists",18:"Cross-device link",19:"No such device",20:"Not a directory",21:"Is a directory",22:"Invalid argument",23:"Too many open files in system",24:"Too many open files",25:"Not a typewriter",26:"Text file busy",27:"File too large",28:"No space left on device",29:"Illegal seek",30:"Read only file system",31:"Too many links",32:"Broken pipe",33:"Math arg out of domain of func",34:"Math result not representable",35:"File locking deadlock error",36:"File or path name too long",37:"No record locks available",38:"Function not implemented",39:"Directory not empty",40:"Too many symbolic links",42:"No message of desired type",43:"Identifier removed",44:"Channel number out of range",45:"Level 2 not synchronized",46:"Level 3 halted",47:"Level 3 reset",48:"Link number out of range",49:"Protocol driver not attached",50:"No CSI structure available",51:"Level 2 halted",52:"Invalid exchange",53:"Invalid request descriptor",54:"Exchange full",55:"No anode",56:"Invalid request code",57:"Invalid slot",59:"Bad font file fmt",60:"Device not a stream",61:"No data (for no delay io)",62:"Timer expired",63:"Out of streams resources",64:"Machine is not on the network",65:"Package not installed",66:"The object is remote",67:"The link has been severed",68:"Advertise error",69:"Srmount error",70:"Communication error on send",71:"Protocol error",72:"Multihop attempted",73:"Cross mount point (not really error)",74:"Trying to read unreadable message",75:"Value too large for defined data type",76:"Given log. name not unique",77:"f.d. invalid for this operation",78:"Remote address changed",79:"Can   access a needed shared lib",80:"Accessing a corrupted shared lib",81:".lib section in a.out corrupted",82:"Attempting to link in too many libs",83:"Attempting to exec a shared library",84:"Illegal byte sequence",86:"Streams pipe error",87:"Too many users",88:"Socket operation on non-socket",89:"Destination address required",90:"Message too long",91:"Protocol wrong type for socket",92:"Protocol not available",93:"Unknown protocol",94:"Socket type not supported",95:"Not supported",96:"Protocol family not supported",97:"Address family not supported by protocol family",98:"Address already in use",99:"Address not available",100:"Network interface is not configured",101:"Network is unreachable",102:"Connection reset by network",103:"Connection aborted",104:"Connection reset by peer",105:"No buffer space available",106:"Socket is already connected",107:"Socket is not connected",108:"Can't send after socket shutdown",109:"Too many references",110:"Connection timed out",111:"Connection refused",112:"Host is down",113:"Host is unreachable",114:"Socket already connected",115:"Connection already in progress",116:"Stale file handle",122:"Quota exceeded",123:"No medium (in tape drive)",125:"Operation canceled",130:"Previous owner died",131:"State not recoverable"};
   
-  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};var FS={root:null,mounts:[],devices:{},streams:[],nextInode:1,nameTable:null,currentPath:"/",initialized:false,ignorePermissions:true,trackingDelegate:{},tracking:{openFlags:{READ:1,WRITE:2}},ErrnoError:null,genericErrors:{},filesystems:null,syncFSRequests:0,handleFSError:function (e) {
+  var ERRNO_CODES={EPERM:1,ENOENT:2,ESRCH:3,EINTR:4,EIO:5,ENXIO:6,E2BIG:7,ENOEXEC:8,EBADF:9,ECHILD:10,EAGAIN:11,EWOULDBLOCK:11,ENOMEM:12,EACCES:13,EFAULT:14,ENOTBLK:15,EBUSY:16,EEXIST:17,EXDEV:18,ENODEV:19,ENOTDIR:20,EISDIR:21,EINVAL:22,ENFILE:23,EMFILE:24,ENOTTY:25,ETXTBSY:26,EFBIG:27,ENOSPC:28,ESPIPE:29,EROFS:30,EMLINK:31,EPIPE:32,EDOM:33,ERANGE:34,ENOMSG:42,EIDRM:43,ECHRNG:44,EL2NSYNC:45,EL3HLT:46,EL3RST:47,ELNRNG:48,EUNATCH:49,ENOCSI:50,EL2HLT:51,EDEADLK:35,ENOLCK:37,EBADE:52,EBADR:53,EXFULL:54,ENOANO:55,EBADRQC:56,EBADSLT:57,EDEADLOCK:35,EBFONT:59,ENOSTR:60,ENODATA:61,ETIME:62,ENOSR:63,ENONET:64,ENOPKG:65,EREMOTE:66,ENOLINK:67,EADV:68,ESRMNT:69,ECOMM:70,EPROTO:71,EMULTIHOP:72,EDOTDOT:73,EBADMSG:74,ENOTUNIQ:76,EBADFD:77,EREMCHG:78,ELIBACC:79,ELIBBAD:80,ELIBSCN:81,ELIBMAX:82,ELIBEXEC:83,ENOSYS:38,ENOTEMPTY:39,ENAMETOOLONG:36,ELOOP:40,EOPNOTSUPP:95,EPFNOSUPPORT:96,ECONNRESET:104,ENOBUFS:105,EAFNOSUPPORT:97,EPROTOTYPE:91,ENOTSOCK:88,ENOPROTOOPT:92,ESHUTDOWN:108,ECONNREFUSED:111,EADDRINUSE:98,ECONNABORTED:103,ENETUNREACH:101,ENETDOWN:100,ETIMEDOUT:110,EHOSTDOWN:112,EHOSTUNREACH:113,EINPROGRESS:115,EALREADY:114,EDESTADDRREQ:89,EMSGSIZE:90,EPROTONOSUPPORT:93,ESOCKTNOSUPPORT:94,EADDRNOTAVAIL:99,ENETRESET:102,EISCONN:106,ENOTCONN:107,ETOOMANYREFS:109,EUSERS:87,EDQUOT:122,ESTALE:116,ENOTSUP:95,ENOMEDIUM:123,EILSEQ:84,EOVERFLOW:75,ECANCELED:125,ENOTRECOVERABLE:131,EOWNERDEAD:130,ESTRPIPE:86};var FS={root:null,mounts:[],devices:{},streams:[],nextInode:1,nameTable:null,currentPath:"/",initialized:false,ignorePermissions:true,trackingDelegate:{},tracking:{openFlags:{READ:1,WRITE:2}},ErrnoError:null,genericErrors:{},filesystems:null,syncFSRequests:0,handleFSError:function(e) {
         if (!(e instanceof FS.ErrnoError)) throw e + ' : ' + stackTrace();
         return ___setErrNo(e.errno);
-      },lookupPath:function (path, opts) {
+      },lookupPath:function(path, opts) {
         path = PATH_FS.resolve(FS.cwd(), path);
         opts = opts || {};
   
@@ -3299,7 +3261,7 @@ function copyTempDouble(ptr) {
         }
   
         return { path: current_path, node: current };
-      },getPath:function (node) {
+      },getPath:function(node) {
         var path;
         while (true) {
           if (FS.isRoot(node)) {
@@ -3310,7 +3272,7 @@ function copyTempDouble(ptr) {
           path = path ? node.name + '/' + path : node.name;
           node = node.parent;
         }
-      },hashName:function (parentid, name) {
+      },hashName:function(parentid, name) {
         var hash = 0;
   
   
@@ -3318,11 +3280,11 @@ function copyTempDouble(ptr) {
           hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
         }
         return ((parentid + hash) >>> 0) % FS.nameTable.length;
-      },hashAddNode:function (node) {
+      },hashAddNode:function(node) {
         var hash = FS.hashName(node.parent.id, node.name);
         node.name_next = FS.nameTable[hash];
         FS.nameTable[hash] = node;
-      },hashRemoveNode:function (node) {
+      },hashRemoveNode:function(node) {
         var hash = FS.hashName(node.parent.id, node.name);
         if (FS.nameTable[hash] === node) {
           FS.nameTable[hash] = node.name_next;
@@ -3336,7 +3298,7 @@ function copyTempDouble(ptr) {
             current = current.name_next;
           }
         }
-      },lookupNode:function (parent, name) {
+      },lookupNode:function(parent, name) {
         var err = FS.mayLookup(parent);
         if (err) {
           throw new FS.ErrnoError(err, parent);
@@ -3350,7 +3312,7 @@ function copyTempDouble(ptr) {
         }
         // if we failed to find it in the cache, call into the VFS
         return FS.lookup(parent, name);
-      },createNode:function (parent, name, mode, rdev) {
+      },createNode:function(parent, name, mode, rdev) {
         if (!FS.FSNode) {
           FS.FSNode = function(parent, name, mode, rdev) {
             if (!parent) {
@@ -3398,39 +3360,39 @@ function copyTempDouble(ptr) {
         FS.hashAddNode(node);
   
         return node;
-      },destroyNode:function (node) {
+      },destroyNode:function(node) {
         FS.hashRemoveNode(node);
-      },isRoot:function (node) {
+      },isRoot:function(node) {
         return node === node.parent;
-      },isMountpoint:function (node) {
+      },isMountpoint:function(node) {
         return !!node.mounted;
-      },isFile:function (mode) {
+      },isFile:function(mode) {
         return (mode & 61440) === 32768;
-      },isDir:function (mode) {
+      },isDir:function(mode) {
         return (mode & 61440) === 16384;
-      },isLink:function (mode) {
+      },isLink:function(mode) {
         return (mode & 61440) === 40960;
-      },isChrdev:function (mode) {
+      },isChrdev:function(mode) {
         return (mode & 61440) === 8192;
-      },isBlkdev:function (mode) {
+      },isBlkdev:function(mode) {
         return (mode & 61440) === 24576;
-      },isFIFO:function (mode) {
+      },isFIFO:function(mode) {
         return (mode & 61440) === 4096;
-      },isSocket:function (mode) {
+      },isSocket:function(mode) {
         return (mode & 49152) === 49152;
-      },flagModes:{"r":0,"rs":1052672,"r+":2,"w":577,"wx":705,"xw":705,"w+":578,"wx+":706,"xw+":706,"a":1089,"ax":1217,"xa":1217,"a+":1090,"ax+":1218,"xa+":1218},modeStringToFlags:function (str) {
+      },flagModes:{"r":0,"rs":1052672,"r+":2,"w":577,"wx":705,"xw":705,"w+":578,"wx+":706,"xw+":706,"a":1089,"ax":1217,"xa":1217,"a+":1090,"ax+":1218,"xa+":1218},modeStringToFlags:function(str) {
         var flags = FS.flagModes[str];
         if (typeof flags === 'undefined') {
           throw new Error('Unknown file open mode: ' + str);
         }
         return flags;
-      },flagsToPermissionString:function (flag) {
+      },flagsToPermissionString:function(flag) {
         var perms = ['r', 'w', 'rw'][flag & 3];
         if ((flag & 512)) {
           perms += 'w';
         }
         return perms;
-      },nodePermissions:function (node, perms) {
+      },nodePermissions:function(node, perms) {
         if (FS.ignorePermissions) {
           return 0;
         }
@@ -3443,19 +3405,19 @@ function copyTempDouble(ptr) {
           return 13;
         }
         return 0;
-      },mayLookup:function (dir) {
+      },mayLookup:function(dir) {
         var err = FS.nodePermissions(dir, 'x');
         if (err) return err;
         if (!dir.node_ops.lookup) return 13;
         return 0;
-      },mayCreate:function (dir, name) {
+      },mayCreate:function(dir, name) {
         try {
           var node = FS.lookupNode(dir, name);
           return 17;
         } catch (e) {
         }
         return FS.nodePermissions(dir, 'wx');
-      },mayDelete:function (dir, name, isdir) {
+      },mayDelete:function(dir, name, isdir) {
         var node;
         try {
           node = FS.lookupNode(dir, name);
@@ -3479,7 +3441,7 @@ function copyTempDouble(ptr) {
           }
         }
         return 0;
-      },mayOpen:function (node, flags) {
+      },mayOpen:function(node, flags) {
         if (!node) {
           return 2;
         }
@@ -3492,7 +3454,7 @@ function copyTempDouble(ptr) {
           }
         }
         return FS.nodePermissions(node, FS.flagsToPermissionString(flags));
-      },MAX_OPEN_FDS:4096,nextfd:function (fd_start, fd_end) {
+      },MAX_OPEN_FDS:4096,nextfd:function(fd_start, fd_end) {
         fd_start = fd_start || 0;
         fd_end = fd_end || FS.MAX_OPEN_FDS;
         for (var fd = fd_start; fd <= fd_end; fd++) {
@@ -3501,9 +3463,9 @@ function copyTempDouble(ptr) {
           }
         }
         throw new FS.ErrnoError(24);
-      },getStream:function (fd) {
+      },getStream:function(fd) {
         return FS.streams[fd];
-      },createStream:function (stream, fd_start, fd_end) {
+      },createStream:function(stream, fd_start, fd_end) {
         if (!FS.FSStream) {
           FS.FSStream = function(){};
           FS.FSStream.prototype = {};
@@ -3534,9 +3496,9 @@ function copyTempDouble(ptr) {
         stream.fd = fd;
         FS.streams[fd] = stream;
         return stream;
-      },closeStream:function (fd) {
+      },closeStream:function(fd) {
         FS.streams[fd] = null;
-      },chrdev_stream_ops:{open:function (stream) {
+      },chrdev_stream_ops:{open:function(stream) {
           var device = FS.getDevice(stream.node.rdev);
           // override node's stream ops with the device's
           stream.stream_ops = device.stream_ops;
@@ -3544,19 +3506,19 @@ function copyTempDouble(ptr) {
           if (stream.stream_ops.open) {
             stream.stream_ops.open(stream);
           }
-        },llseek:function () {
+        },llseek:function() {
           throw new FS.ErrnoError(29);
-        }},major:function (dev) {
+        }},major:function(dev) {
         return ((dev) >> 8);
-      },minor:function (dev) {
+      },minor:function(dev) {
         return ((dev) & 0xff);
-      },makedev:function (ma, mi) {
+      },makedev:function(ma, mi) {
         return ((ma) << 8 | (mi));
-      },registerDevice:function (dev, ops) {
+      },registerDevice:function(dev, ops) {
         FS.devices[dev] = { stream_ops: ops };
-      },getDevice:function (dev) {
+      },getDevice:function(dev) {
         return FS.devices[dev];
-      },getMounts:function (mount) {
+      },getMounts:function(mount) {
         var mounts = [];
         var check = [mount];
   
@@ -3569,7 +3531,7 @@ function copyTempDouble(ptr) {
         }
   
         return mounts;
-      },syncfs:function (populate, callback) {
+      },syncfs:function(populate, callback) {
         if (typeof(populate) === 'function') {
           callback = populate;
           populate = false;
@@ -3610,7 +3572,7 @@ function copyTempDouble(ptr) {
           }
           mount.type.syncfs(mount, populate, done);
         });
-      },mount:function (type, opts, mountpoint) {
+      },mount:function(type, opts, mountpoint) {
         var root = mountpoint === '/';
         var pseudo = !mountpoint;
         var node;
@@ -3690,9 +3652,9 @@ function copyTempDouble(ptr) {
         var idx = node.mount.mounts.indexOf(mount);
         assert(idx !== -1);
         node.mount.mounts.splice(idx, 1);
-      },lookup:function (parent, name) {
+      },lookup:function(parent, name) {
         return parent.node_ops.lookup(parent, name);
-      },mknod:function (path, mode, dev) {
+      },mknod:function(path, mode, dev) {
         var lookup = FS.lookupPath(path, { parent: true });
         var parent = lookup.node;
         var name = PATH.basename(path);
@@ -3707,17 +3669,17 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(1);
         }
         return parent.node_ops.mknod(parent, name, mode, dev);
-      },create:function (path, mode) {
+      },create:function(path, mode) {
         mode = mode !== undefined ? mode : 438 /* 0666 */;
         mode &= 4095;
         mode |= 32768;
         return FS.mknod(path, mode, 0);
-      },mkdir:function (path, mode) {
+      },mkdir:function(path, mode) {
         mode = mode !== undefined ? mode : 511 /* 0777 */;
         mode &= 511 | 512;
         mode |= 16384;
         return FS.mknod(path, mode, 0);
-      },mkdirTree:function (path, mode) {
+      },mkdirTree:function(path, mode) {
         var dirs = path.split('/');
         var d = '';
         for (var i = 0; i < dirs.length; ++i) {
@@ -3729,14 +3691,14 @@ function copyTempDouble(ptr) {
             if (e.errno != 17) throw e;
           }
         }
-      },mkdev:function (path, mode, dev) {
+      },mkdev:function(path, mode, dev) {
         if (typeof(dev) === 'undefined') {
           dev = mode;
           mode = 438 /* 0666 */;
         }
         mode |= 8192;
         return FS.mknod(path, mode, dev);
-      },symlink:function (oldpath, newpath) {
+      },symlink:function(oldpath, newpath) {
         if (!PATH_FS.resolve(oldpath)) {
           throw new FS.ErrnoError(2);
         }
@@ -3754,7 +3716,7 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(1);
         }
         return parent.node_ops.symlink(parent, newname, oldpath);
-      },rename:function (old_path, new_path) {
+      },rename:function(old_path, new_path) {
         var old_dirname = PATH.dirname(old_path);
         var new_dirname = PATH.dirname(new_path);
         var old_name = PATH.basename(old_path);
@@ -3848,7 +3810,7 @@ function copyTempDouble(ptr) {
         } catch(e) {
           console.log("FS.trackingDelegate['onMovePath']('"+old_path+"', '"+new_path+"') threw an exception: " + e.message);
         }
-      },rmdir:function (path) {
+      },rmdir:function(path) {
         var lookup = FS.lookupPath(path, { parent: true });
         var parent = lookup.node;
         var name = PATH.basename(path);
@@ -3877,14 +3839,14 @@ function copyTempDouble(ptr) {
         } catch(e) {
           console.log("FS.trackingDelegate['onDeletePath']('"+path+"') threw an exception: " + e.message);
         }
-      },readdir:function (path) {
+      },readdir:function(path) {
         var lookup = FS.lookupPath(path, { follow: true });
         var node = lookup.node;
         if (!node.node_ops.readdir) {
           throw new FS.ErrnoError(20);
         }
         return node.node_ops.readdir(node);
-      },unlink:function (path) {
+      },unlink:function(path) {
         var lookup = FS.lookupPath(path, { parent: true });
         var parent = lookup.node;
         var name = PATH.basename(path);
@@ -3916,7 +3878,7 @@ function copyTempDouble(ptr) {
         } catch(e) {
           console.log("FS.trackingDelegate['onDeletePath']('"+path+"') threw an exception: " + e.message);
         }
-      },readlink:function (path) {
+      },readlink:function(path) {
         var lookup = FS.lookupPath(path);
         var link = lookup.node;
         if (!link) {
@@ -3926,7 +3888,7 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(22);
         }
         return PATH_FS.resolve(FS.getPath(link.parent), link.node_ops.readlink(link));
-      },stat:function (path, dontFollow) {
+      },stat:function(path, dontFollow) {
         var lookup = FS.lookupPath(path, { follow: !dontFollow });
         var node = lookup.node;
         if (!node) {
@@ -3936,9 +3898,9 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(1);
         }
         return node.node_ops.getattr(node);
-      },lstat:function (path) {
+      },lstat:function(path) {
         return FS.stat(path, true);
-      },chmod:function (path, mode, dontFollow) {
+      },chmod:function(path, mode, dontFollow) {
         var node;
         if (typeof path === 'string') {
           var lookup = FS.lookupPath(path, { follow: !dontFollow });
@@ -3953,15 +3915,15 @@ function copyTempDouble(ptr) {
           mode: (mode & 4095) | (node.mode & ~4095),
           timestamp: Date.now()
         });
-      },lchmod:function (path, mode) {
+      },lchmod:function(path, mode) {
         FS.chmod(path, mode, true);
-      },fchmod:function (fd, mode) {
+      },fchmod:function(fd, mode) {
         var stream = FS.getStream(fd);
         if (!stream) {
           throw new FS.ErrnoError(9);
         }
         FS.chmod(stream.node, mode);
-      },chown:function (path, uid, gid, dontFollow) {
+      },chown:function(path, uid, gid, dontFollow) {
         var node;
         if (typeof path === 'string') {
           var lookup = FS.lookupPath(path, { follow: !dontFollow });
@@ -3976,15 +3938,15 @@ function copyTempDouble(ptr) {
           timestamp: Date.now()
           // we ignore the uid / gid for now
         });
-      },lchown:function (path, uid, gid) {
+      },lchown:function(path, uid, gid) {
         FS.chown(path, uid, gid, true);
-      },fchown:function (fd, uid, gid) {
+      },fchown:function(fd, uid, gid) {
         var stream = FS.getStream(fd);
         if (!stream) {
           throw new FS.ErrnoError(9);
         }
         FS.chown(stream.node, uid, gid);
-      },truncate:function (path, len) {
+      },truncate:function(path, len) {
         if (len < 0) {
           throw new FS.ErrnoError(22);
         }
@@ -4012,7 +3974,7 @@ function copyTempDouble(ptr) {
           size: len,
           timestamp: Date.now()
         });
-      },ftruncate:function (fd, len) {
+      },ftruncate:function(fd, len) {
         var stream = FS.getStream(fd);
         if (!stream) {
           throw new FS.ErrnoError(9);
@@ -4021,13 +3983,13 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(22);
         }
         FS.truncate(stream.node, len);
-      },utime:function (path, atime, mtime) {
+      },utime:function(path, atime, mtime) {
         var lookup = FS.lookupPath(path, { follow: true });
         var node = lookup.node;
         node.node_ops.setattr(node, {
           timestamp: Math.max(atime, mtime)
         });
-      },open:function (path, flags, mode, fd_start, fd_end) {
+      },open:function(path, flags, mode, fd_start, fd_end) {
         if (path === "") {
           throw new FS.ErrnoError(2);
         }
@@ -4131,7 +4093,7 @@ function copyTempDouble(ptr) {
           console.log("FS.trackingDelegate['onOpenFile']('"+path+"', flags) threw an exception: " + e.message);
         }
         return stream;
-      },close:function (stream) {
+      },close:function(stream) {
         if (FS.isClosed(stream)) {
           throw new FS.ErrnoError(9);
         }
@@ -4146,9 +4108,9 @@ function copyTempDouble(ptr) {
           FS.closeStream(stream.fd);
         }
         stream.fd = null;
-      },isClosed:function (stream) {
+      },isClosed:function(stream) {
         return stream.fd === null;
-      },llseek:function (stream, offset, whence) {
+      },llseek:function(stream, offset, whence) {
         if (FS.isClosed(stream)) {
           throw new FS.ErrnoError(9);
         }
@@ -4161,7 +4123,7 @@ function copyTempDouble(ptr) {
         stream.position = stream.stream_ops.llseek(stream, offset, whence);
         stream.ungotten = [];
         return stream.position;
-      },read:function (stream, buffer, offset, length, position) {
+      },read:function(stream, buffer, offset, length, position) {
         if (length < 0 || position < 0) {
           throw new FS.ErrnoError(22);
         }
@@ -4186,7 +4148,7 @@ function copyTempDouble(ptr) {
         var bytesRead = stream.stream_ops.read(stream, buffer, offset, length, position);
         if (!seeking) stream.position += bytesRead;
         return bytesRead;
-      },write:function (stream, buffer, offset, length, position, canOwn) {
+      },write:function(stream, buffer, offset, length, position, canOwn) {
         if (length < 0 || position < 0) {
           throw new FS.ErrnoError(22);
         }
@@ -4220,7 +4182,7 @@ function copyTempDouble(ptr) {
           console.log("FS.trackingDelegate['onWriteToFile']('"+stream.path+"') threw an exception: " + e.message);
         }
         return bytesWritten;
-      },allocate:function (stream, offset, length) {
+      },allocate:function(stream, offset, length) {
         if (FS.isClosed(stream)) {
           throw new FS.ErrnoError(9);
         }
@@ -4237,8 +4199,18 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(95);
         }
         stream.stream_ops.allocate(stream, offset, length);
-      },mmap:function (stream, buffer, offset, length, position, prot, flags) {
-        // TODO if PROT is PROT_WRITE, make sure we have write access
+      },mmap:function(stream, buffer, offset, length, position, prot, flags) {
+        // User requests writing to file (prot & PROT_WRITE != 0).
+        // Checking if we have permissions to write to the file unless
+        // MAP_PRIVATE flag is set. According to POSIX spec it is possible
+        // to write to file opened in read-only mode with MAP_PRIVATE flag,
+        // as all modifications will be visible only in the memory of
+        // the current process.
+        if ((prot & 2) !== 0
+            && (flags & 2) === 0
+            && (stream.flags & 2097155) !== 2) {
+          throw new FS.ErrnoError(13);
+        }
         if ((stream.flags & 2097155) === 1) {
           throw new FS.ErrnoError(13);
         }
@@ -4246,19 +4218,19 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(19);
         }
         return stream.stream_ops.mmap(stream, buffer, offset, length, position, prot, flags);
-      },msync:function (stream, buffer, offset, length, mmapFlags) {
+      },msync:function(stream, buffer, offset, length, mmapFlags) {
         if (!stream || !stream.stream_ops.msync) {
           return 0;
         }
         return stream.stream_ops.msync(stream, buffer, offset, length, mmapFlags);
-      },munmap:function (stream) {
+      },munmap:function(stream) {
         return 0;
-      },ioctl:function (stream, cmd, arg) {
+      },ioctl:function(stream, cmd, arg) {
         if (!stream.stream_ops.ioctl) {
           throw new FS.ErrnoError(25);
         }
         return stream.stream_ops.ioctl(stream, cmd, arg);
-      },readFile:function (path, opts) {
+      },readFile:function(path, opts) {
         opts = opts || {};
         opts.flags = opts.flags || 'r';
         opts.encoding = opts.encoding || 'binary';
@@ -4278,7 +4250,7 @@ function copyTempDouble(ptr) {
         }
         FS.close(stream);
         return ret;
-      },writeFile:function (path, data, opts) {
+      },writeFile:function(path, data, opts) {
         opts = opts || {};
         opts.flags = opts.flags || 'w';
         var stream = FS.open(path, opts.flags, opts.mode);
@@ -4292,9 +4264,9 @@ function copyTempDouble(ptr) {
           throw new Error('Unsupported data type');
         }
         FS.close(stream);
-      },cwd:function () {
+      },cwd:function() {
         return FS.currentPath;
-      },chdir:function (path) {
+      },chdir:function(path) {
         var lookup = FS.lookupPath(path, { follow: true });
         if (lookup.node === null) {
           throw new FS.ErrnoError(2);
@@ -4307,11 +4279,11 @@ function copyTempDouble(ptr) {
           throw new FS.ErrnoError(err);
         }
         FS.currentPath = lookup.path;
-      },createDefaultDirectories:function () {
+      },createDefaultDirectories:function() {
         FS.mkdir('/tmp');
         FS.mkdir('/home');
         FS.mkdir('/home/web_user');
-      },createDefaultDevices:function () {
+      },createDefaultDevices:function() {
         // create /dev
         FS.mkdir('/dev');
         // setup /dev/null
@@ -4355,7 +4327,7 @@ function copyTempDouble(ptr) {
         // just create the tmp dirs that reside in it commonly
         FS.mkdir('/dev/shm');
         FS.mkdir('/dev/shm/tmp');
-      },createSpecialDirectories:function () {
+      },createSpecialDirectories:function() {
         // create /proc/self/fd which allows /proc/self/fd/6 => readlink gives the name of the stream for fd 6 (see test_unistd_ttyname)
         FS.mkdir('/proc');
         FS.mkdir('/proc/self');
@@ -4380,7 +4352,7 @@ function copyTempDouble(ptr) {
             return node;
           }
         }, {}, '/proc/self/fd');
-      },createStandardStreams:function () {
+      },createStandardStreams:function() {
         // TODO deprecate the old functionality of a single
         // input / output callback and that utilizes FS.createDevice
         // and instead require a unique set of stream ops
@@ -4412,7 +4384,7 @@ function copyTempDouble(ptr) {
         assert(stdin.fd === 0, 'invalid handle for stdin (' + stdin.fd + ')');
         assert(stdout.fd === 1, 'invalid handle for stdout (' + stdout.fd + ')');
         assert(stderr.fd === 2, 'invalid handle for stderr (' + stderr.fd + ')');
-      },ensureErrnoError:function () {
+      },ensureErrnoError:function() {
         if (FS.ErrnoError) return;
         FS.ErrnoError = function ErrnoError(errno, node) {
           this.node = node;
@@ -4438,7 +4410,7 @@ function copyTempDouble(ptr) {
           FS.genericErrors[code] = new FS.ErrnoError(code);
           FS.genericErrors[code].stack = '<generic error, no stack>';
         });
-      },staticInit:function () {
+      },staticInit:function() {
         FS.ensureErrnoError();
   
         FS.nameTable = new Array(4096);
@@ -4455,7 +4427,7 @@ function copyTempDouble(ptr) {
           'NODEFS': NODEFS,
           'WORKERFS': WORKERFS,
         };
-      },init:function (input, output, error) {
+      },init:function(input, output, error) {
         assert(!FS.init.initialized, 'FS.init was previously called. If you want to initialize later with custom parameters, remove any earlier calls (note that one is automatically added to the generated code)');
         FS.init.initialized = true;
   
@@ -4467,7 +4439,7 @@ function copyTempDouble(ptr) {
         Module['stderr'] = error || Module['stderr'];
   
         FS.createStandardStreams();
-      },quit:function () {
+      },quit:function() {
         FS.init.initialized = false;
         // force-flush all streams, so we get musl std streams printed out
         var fflush = Module['_fflush'];
@@ -4480,20 +4452,20 @@ function copyTempDouble(ptr) {
           }
           FS.close(stream);
         }
-      },getMode:function (canRead, canWrite) {
+      },getMode:function(canRead, canWrite) {
         var mode = 0;
         if (canRead) mode |= 292 | 73;
         if (canWrite) mode |= 146;
         return mode;
-      },joinPath:function (parts, forceRelative) {
+      },joinPath:function(parts, forceRelative) {
         var path = PATH.join.apply(null, parts);
         if (forceRelative && path[0] == '/') path = path.substr(1);
         return path;
-      },absolutePath:function (relative, base) {
+      },absolutePath:function(relative, base) {
         return PATH_FS.resolve(base, relative);
-      },standardizePath:function (path) {
+      },standardizePath:function(path) {
         return PATH.normalize(path);
-      },findObject:function (path, dontResolveLastLink) {
+      },findObject:function(path, dontResolveLastLink) {
         var ret = FS.analyzePath(path, dontResolveLastLink);
         if (ret.exists) {
           return ret.object;
@@ -4501,7 +4473,7 @@ function copyTempDouble(ptr) {
           ___setErrNo(ret.error);
           return null;
         }
-      },analyzePath:function (path, dontResolveLastLink) {
+      },analyzePath:function(path, dontResolveLastLink) {
         // operate from within the context of the symlink's target
         try {
           var lookup = FS.lookupPath(path, { follow: !dontResolveLastLink });
@@ -4528,11 +4500,11 @@ function copyTempDouble(ptr) {
           ret.error = e.errno;
         };
         return ret;
-      },createFolder:function (parent, name, canRead, canWrite) {
+      },createFolder:function(parent, name, canRead, canWrite) {
         var path = PATH.join2(typeof parent === 'string' ? parent : FS.getPath(parent), name);
         var mode = FS.getMode(canRead, canWrite);
         return FS.mkdir(path, mode);
-      },createPath:function (parent, path, canRead, canWrite) {
+      },createPath:function(parent, path, canRead, canWrite) {
         parent = typeof parent === 'string' ? parent : FS.getPath(parent);
         var parts = path.split('/').reverse();
         while (parts.length) {
@@ -4547,11 +4519,11 @@ function copyTempDouble(ptr) {
           parent = current;
         }
         return current;
-      },createFile:function (parent, name, properties, canRead, canWrite) {
+      },createFile:function(parent, name, properties, canRead, canWrite) {
         var path = PATH.join2(typeof parent === 'string' ? parent : FS.getPath(parent), name);
         var mode = FS.getMode(canRead, canWrite);
         return FS.create(path, mode);
-      },createDataFile:function (parent, name, data, canRead, canWrite, canOwn) {
+      },createDataFile:function(parent, name, data, canRead, canWrite, canOwn) {
         var path = name ? PATH.join2(typeof parent === 'string' ? parent : FS.getPath(parent), name) : parent;
         var mode = FS.getMode(canRead, canWrite);
         var node = FS.create(path, mode);
@@ -4569,7 +4541,7 @@ function copyTempDouble(ptr) {
           FS.chmod(node, mode);
         }
         return node;
-      },createDevice:function (parent, name, input, output) {
+      },createDevice:function(parent, name, input, output) {
         var path = PATH.join2(typeof parent === 'string' ? parent : FS.getPath(parent), name);
         var mode = FS.getMode(!!input, !!output);
         if (!FS.createDevice.major) FS.createDevice.major = 64;
@@ -4622,10 +4594,10 @@ function copyTempDouble(ptr) {
           }
         });
         return FS.mkdev(path, mode, dev);
-      },createLink:function (parent, name, target, canRead, canWrite) {
+      },createLink:function(parent, name, target, canRead, canWrite) {
         var path = PATH.join2(typeof parent === 'string' ? parent : FS.getPath(parent), name);
         return FS.symlink(target, path);
-      },forceLoadFile:function (obj) {
+      },forceLoadFile:function(obj) {
         if (obj.isDevice || obj.isFolder || obj.link || obj.contents) return true;
         var success = true;
         if (typeof XMLHttpRequest !== 'undefined') {
@@ -4645,7 +4617,7 @@ function copyTempDouble(ptr) {
         }
         if (!success) ___setErrNo(5);
         return success;
-      },createLazyFile:function (parent, name, url, canRead, canWrite) {
+      },createLazyFile:function(parent, name, url, canRead, canWrite) {
         // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
         function LazyUint8Array() {
           this.lengthKnown = false;
@@ -4803,7 +4775,7 @@ function copyTempDouble(ptr) {
         };
         node.stream_ops = stream_ops;
         return node;
-      },createPreloadedFile:function (parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish) {
+      },createPreloadedFile:function(parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish) {
         Browser.init(); // XXX perhaps this method should move onto Browser?
         // TODO we should allow people to just pass in a complete filename instead
         // of parent and name being that we just join them anyways
@@ -4839,11 +4811,11 @@ function copyTempDouble(ptr) {
         } else {
           processData(url);
         }
-      },indexedDB:function () {
+      },indexedDB:function() {
         return window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-      },DB_NAME:function () {
+      },DB_NAME:function() {
         return 'EM_FS_' + window.location.pathname;
-      },DB_VERSION:20,DB_STORE_NAME:"FILE_DATA",saveFilesToDB:function (paths, onload, onerror) {
+      },DB_VERSION:20,DB_STORE_NAME:"FILE_DATA",saveFilesToDB:function(paths, onload, onerror) {
         onload = onload || function(){};
         onerror = onerror || function(){};
         var indexedDB = FS.indexedDB();
@@ -4873,7 +4845,7 @@ function copyTempDouble(ptr) {
           transaction.onerror = onerror;
         };
         openRequest.onerror = onerror;
-      },loadFilesFromDB:function (paths, onload, onerror) {
+      },loadFilesFromDB:function(paths, onload, onerror) {
         onload = onload || function(){};
         onerror = onerror || function(){};
         var indexedDB = FS.indexedDB();
@@ -4911,7 +4883,7 @@ function copyTempDouble(ptr) {
           transaction.onerror = onerror;
         };
         openRequest.onerror = onerror;
-      }};var SYSCALLS={DEFAULT_POLLMASK:5,mappings:{},umask:511,calculateAt:function (dirfd, path) {
+      }};var SYSCALLS={DEFAULT_POLLMASK:5,mappings:{},umask:511,calculateAt:function(dirfd, path) {
         if (path[0] !== '/') {
           // relative path
           var dir;
@@ -4925,7 +4897,7 @@ function copyTempDouble(ptr) {
           path = PATH.join2(dir, path);
         }
         return path;
-      },doStat:function (func, path, buf) {
+      },doStat:function(func, path, buf) {
         try {
           var stat = func(path);
         } catch (e) {
@@ -4955,17 +4927,17 @@ function copyTempDouble(ptr) {
         SAFE_HEAP_STORE((((buf)+(76))|0), ((0)|0), 4);
         (tempI64 = [stat.ino>>>0,(tempDouble=stat.ino,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],SAFE_HEAP_STORE((((buf)+(80))|0), ((tempI64[0])|0), 4),SAFE_HEAP_STORE((((buf)+(84))|0), ((tempI64[1])|0), 4));
         return 0;
-      },doMsync:function (addr, stream, len, flags) {
+      },doMsync:function(addr, stream, len, flags) {
         var buffer = new Uint8Array(HEAPU8.subarray(addr, addr + len));
         FS.msync(stream, buffer, 0, len, flags);
-      },doMkdir:function (path, mode) {
+      },doMkdir:function(path, mode) {
         // remove a trailing slash, if one - /a/b/ has basename of '', but
         // we want to create b in the context of this function
         path = PATH.normalize(path);
         if (path[path.length-1] === '/') path = path.substr(0, path.length-1);
         FS.mkdir(path, mode, 0);
         return 0;
-      },doMknod:function (path, mode, dev) {
+      },doMknod:function(path, mode, dev) {
         // we don't want this in the JS API as it uses mknod to create all nodes.
         switch (mode & 61440) {
           case 32768:
@@ -4978,7 +4950,7 @@ function copyTempDouble(ptr) {
         }
         FS.mknod(path, mode, dev);
         return 0;
-      },doReadlink:function (path, buf, bufsize) {
+      },doReadlink:function(path, buf, bufsize) {
         if (bufsize <= 0) return -22;
         var ret = FS.readlink(path);
   
@@ -4990,7 +4962,7 @@ function copyTempDouble(ptr) {
         HEAP8[buf+len] = endChar;
   
         return len;
-      },doAccess:function (path, amode) {
+      },doAccess:function(path, amode) {
         if (amode & ~7) {
           // need a valid mode
           return -22;
@@ -5006,11 +4978,11 @@ function copyTempDouble(ptr) {
           return -13;
         }
         return 0;
-      },doDup:function (path, flags, suggestFD) {
+      },doDup:function(path, flags, suggestFD) {
         var suggest = FS.getStream(suggestFD);
         if (suggest) FS.close(suggest);
         return FS.open(path, flags, 0, suggestFD, suggestFD).fd;
-      },doReadv:function (stream, iov, iovcnt, offset) {
+      },doReadv:function(stream, iov, iovcnt, offset) {
         var ret = 0;
         for (var i = 0; i < iovcnt; i++) {
           var ptr = ((SAFE_HEAP_LOAD((((iov)+(i*8))|0), 4, 0))|0);
@@ -5021,7 +4993,7 @@ function copyTempDouble(ptr) {
           if (curr < len) break; // nothing more to read
         }
         return ret;
-      },doWritev:function (stream, iov, iovcnt, offset) {
+      },doWritev:function(stream, iov, iovcnt, offset) {
         var ret = 0;
         for (var i = 0; i < iovcnt; i++) {
           var ptr = ((SAFE_HEAP_LOAD((((iov)+(i*8))|0), 4, 0))|0);
@@ -5031,34 +5003,38 @@ function copyTempDouble(ptr) {
           ret += curr;
         }
         return ret;
-      },varargs:0,get:function (varargs) {
+      },varargs:0,get:function(varargs) {
         SYSCALLS.varargs += 4;
         var ret = ((SAFE_HEAP_LOAD((((SYSCALLS.varargs)-(4))|0), 4, 0))|0);
         return ret;
-      },getStr:function () {
+      },getStr:function() {
         var ret = UTF8ToString(SYSCALLS.get());
         return ret;
-      },getStreamFromFD:function () {
+      },getStreamFromFD:function() {
         var stream = FS.getStream(SYSCALLS.get());
         if (!stream) throw new FS.ErrnoError(9);
         return stream;
-      },get64:function () {
+      },get64:function() {
         var low = SYSCALLS.get(), high = SYSCALLS.get();
         if (low >= 0) assert(high === 0);
         else assert(high === -1);
         return low;
-      },getZero:function () {
+      },getZero:function() {
         assert(SYSCALLS.get() === 0);
       }};function ___syscall140(which, varargs) {SYSCALLS.varargs = varargs;
   try {
    // llseek
       var stream = SYSCALLS.getStreamFromFD(), offset_high = SYSCALLS.get(), offset_low = SYSCALLS.get(), result = SYSCALLS.get(), whence = SYSCALLS.get();
-      // Can't handle 64-bit integers
-      if (!(offset_high == -1 && offset_low < 0) &&
-          !(offset_high == 0 && offset_low >= 0)) {
+      var HIGH_OFFSET = 0x100000000; // 2^32
+      // use an unsigned operator on low and shift high by 32-bits
+      var offset = offset_high * HIGH_OFFSET + (offset_low >>> 0);
+  
+      var DOUBLE_LIMIT = 0x20000000000000; // 2^53
+      // we also check for equality since DOUBLE_LIMIT + 1 == DOUBLE_LIMIT
+      if (offset <= -DOUBLE_LIMIT || offset >= DOUBLE_LIMIT) {
         return -75;
       }
-      var offset = offset_low;
+  
       FS.llseek(stream, offset, whence);
       (tempI64 = [stream.position>>>0,(tempDouble=stream.position,(+(Math_abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math_min((+(Math_floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math_ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],SAFE_HEAP_STORE(((result)|0), ((tempI64[0])|0), 4),SAFE_HEAP_STORE((((result)+(4))|0), ((tempI64[1])|0), 4));
       if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null; // reset readdir state
@@ -5146,10 +5122,11 @@ function copyTempDouble(ptr) {
   }
   }
 
-  function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // munmap
-      var addr = SYSCALLS.get(), len = SYSCALLS.get();
+  
+  function __emscripten_syscall_munmap(addr, len) {
+      if (addr == -1 || len == 0) {
+        return -22;
+      }
       // TODO: support unmmap'ing parts of allocations
       var info = SYSCALLS.mappings[addr];
       if (!info) return 0;
@@ -5163,6 +5140,11 @@ function copyTempDouble(ptr) {
         }
       }
       return 0;
+    }function ___syscall91(which, varargs) {SYSCALLS.varargs = varargs;
+  try {
+   // munmap
+      var addr = SYSCALLS.get(), len = SYSCALLS.get();
+      return __emscripten_syscall_munmap(addr, len);
     } catch (e) {
     if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
     return -e.errno;
@@ -6981,11 +6963,13 @@ function copyTempDouble(ptr) {
         } else {
           // ..., but after that, add smaller increments towards 2GB, which we cannot reach
           newSize = Math.min(alignUp((3 * newSize + 2147483648) / 4, PAGE_MULTIPLE), LIMIT);
-          if (newSize === oldSize) {
-            warnOnce('Cannot ask for more memory since we reached the practical limit in browsers (which is just below 2GB), so the request would have failed. Requesting only ' + HEAP8.length);
-          }
+        }
+  
+        if (newSize === oldSize) {
+          warnOnce('Cannot ask for more memory since we reached the practical limit in browsers (which is just below 2GB), so the request would have failed. Requesting only ' + HEAP8.length);
         }
       }
+  
   
   
       var start = Date.now();
@@ -7074,7 +7058,27 @@ function copyTempDouble(ptr) {
         '%R': '%H:%M',                    // Replaced by the time in 24-hour notation
         '%T': '%H:%M:%S',                 // Replaced by the time
         '%x': '%m/%d/%y',                 // Replaced by the locale's appropriate date representation
-        '%X': '%H:%M:%S'                  // Replaced by the locale's appropriate date representation
+        '%X': '%H:%M:%S',                 // Replaced by the locale's appropriate time representation
+        // Modified Conversion Specifiers
+        '%Ec': '%c',                      // Replaced by the locale's alternative appropriate date and time representation.
+        '%EC': '%C',                      // Replaced by the name of the base year (period) in the locale's alternative representation.
+        '%Ex': '%m/%d/%y',                // Replaced by the locale's alternative date representation.
+        '%EX': '%H:%M:%S',                // Replaced by the locale's alternative time representation.
+        '%Ey': '%y',                      // Replaced by the offset from %EC (year only) in the locale's alternative representation.
+        '%EY': '%Y',                      // Replaced by the full alternative year representation.
+        '%Od': '%d',                      // Replaced by the day of the month, using the locale's alternative numeric symbols, filled as needed with leading zeros if there is any alternative symbol for zero; otherwise, with leading <space> characters.
+        '%Oe': '%e',                      // Replaced by the day of the month, using the locale's alternative numeric symbols, filled as needed with leading <space> characters.
+        '%OH': '%H',                      // Replaced by the hour (24-hour clock) using the locale's alternative numeric symbols.
+        '%OI': '%I',                      // Replaced by the hour (12-hour clock) using the locale's alternative numeric symbols.
+        '%Om': '%m',                      // Replaced by the month using the locale's alternative numeric symbols.
+        '%OM': '%M',                      // Replaced by the minutes using the locale's alternative numeric symbols.
+        '%OS': '%S',                      // Replaced by the seconds using the locale's alternative numeric symbols.
+        '%Ou': '%u',                      // Replaced by the weekday as a number in the locale's alternative representation (Monday=1).
+        '%OU': '%U',                      // Replaced by the week number of the year (Sunday as the first day of the week, rules corresponding to %U ) using the locale's alternative numeric symbols.
+        '%OV': '%V',                      // Replaced by the week number of the year (Monday as the first day of the week, rules corresponding to %V ) using the locale's alternative numeric symbols.
+        '%Ow': '%w',                      // Replaced by the number of the weekday (Sunday=0) using the locale's alternative numeric symbols.
+        '%OW': '%W',                      // Replaced by the week number of the year (Monday as the first day of the week) using the locale's alternative numeric symbols.
+        '%Oy': '%y',                      // Replaced by the year (offset from %C ) using the locale's alternative numeric symbols.
       };
       for (var rule in EXPANSION_RULES_1) {
         pattern = pattern.replace(new RegExp(rule, 'g'), EXPANSION_RULES_1[rule]);
@@ -7224,8 +7228,7 @@ function copyTempDouble(ptr) {
           return '\t';
         },
         '%u': function(date) {
-          var day = new Date(date.tm_year+1900, date.tm_mon+1, date.tm_mday, 0, 0, 0, 0);
-          return day.getDay() || 7;
+          return date.tm_wday || 7;
         },
         '%U': function(date) {
           // Replaced by the week number of the year as a decimal number [00,53].
@@ -7282,8 +7285,7 @@ function copyTempDouble(ptr) {
           return leadingNulls(Math.ceil(daysDifference/7), 2);
         },
         '%w': function(date) {
-          var day = new Date(date.tm_year+1900, date.tm_mon+1, date.tm_mday, 0, 0, 0, 0);
-          return day.getDay();
+          return date.tm_wday;
         },
         '%W': function(date) {
           // Replaced by the week number of the year as a decimal number [00,53].
@@ -7508,14 +7510,13 @@ var asmLibraryArg = {
   "___assert_fail": ___assert_fail,
   "___cxa_allocate_exception": ___cxa_allocate_exception,
   "___cxa_begin_catch": ___cxa_begin_catch,
-  "___cxa_find_matching_catch": ___cxa_find_matching_catch,
-  "___cxa_free_exception": ___cxa_free_exception,
   "___cxa_throw": ___cxa_throw,
   "___cxa_uncaught_exception": ___cxa_uncaught_exception,
+  "___exception_addRef": ___exception_addRef,
+  "___exception_deAdjust": ___exception_deAdjust,
   "___gxx_personality_v0": ___gxx_personality_v0,
   "___lock": ___lock,
   "___map_file": ___map_file,
-  "___resumeException": ___resumeException,
   "___setErrNo": ___setErrNo,
   "___syscall140": ___syscall140,
   "___syscall146": ___syscall146,
@@ -7538,6 +7539,7 @@ var asmLibraryArg = {
   "__embind_register_std_string": __embind_register_std_string,
   "__embind_register_std_wstring": __embind_register_std_wstring,
   "__embind_register_void": __embind_register_void,
+  "__emscripten_syscall_munmap": __emscripten_syscall_munmap,
   "__emval_decref": __emval_decref,
   "__emval_register": __emval_register,
   "__isLeapYear": __isLeapYear,
@@ -7629,6 +7631,13 @@ asm["___cxa_is_pointer_type"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return real____cxa_is_pointer_type.apply(null, arguments);
+};
+
+var real____embind_register_native_and_builtin_types = asm["___embind_register_native_and_builtin_types"];
+asm["___embind_register_native_and_builtin_types"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____embind_register_native_and_builtin_types.apply(null, arguments);
 };
 
 var real____errno_location = asm["___errno_location"];
@@ -7738,6 +7747,12 @@ var ___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["___cxa_is_pointer_type"].apply(null, arguments)
+};
+
+var ___embind_register_native_and_builtin_types = Module["___embind_register_native_and_builtin_types"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["___embind_register_native_and_builtin_types"].apply(null, arguments)
 };
 
 var ___errno_location = Module["___errno_location"] = function() {
@@ -8138,7 +8153,7 @@ function run(args) {
 
     if (ABORT) return;
 
-    ensureInitRuntime();
+    initRuntime();
 
     preMain();
 
@@ -8243,7 +8258,7 @@ function abort(what) {
   if (what !== undefined) {
     out(what);
     err(what);
-    what = JSON.stringify(what)
+    what = '"' + what + '"';
   } else {
     what = '';
   }
@@ -8279,3 +8294,6 @@ run();
 
 
 // {{MODULE_ADDITIONS}}
+
+
+

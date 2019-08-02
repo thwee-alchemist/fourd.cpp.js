@@ -42,5 +42,5 @@ fi
 cd $PROJECT_DIR
 echo `pwd`
 
-echo "Installing emscripten dependencies..."
-sudo apt-get install -y python2.7 nodejs cmake default-jre
+# echo "Installing emscripten dependencies..."
+# sudo apt-get install -y python2.7 nodejs cmake default-jre

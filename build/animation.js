@@ -56,53 +56,20 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     };
   };
 
-  var Label = function(options){
-    options = Object.assign({offset: 25}, options);
+  var Label = function(shadowRoot, options){
+    options = Object.assign({offset: 0}, options);
     
     // thanks, https://codepen.io/dxinteractive/pen/reNpOR
-    var _createTextLabel = function() {
+    var _createTextLabel = function(shadowRoot) {
       var div = shadowRoot.createElement('div');
-      element.appendChild(div);
+      shadowRoot.appendChild(div);
       div.className = 'text-label';
       div.style.position = 'absolute';
       div.style.width = 100;
-      div.style.height = 100;
+      div.style.height = 12;
       div.innerHTML = options.text;
       div.style.top = -1000;
       div.style.left = -1000;
-      
-      /*
-        div.on click:
-          place text of div into value of textbox
-          turn div into textbox
-          on blur:
-            turn textbox into div
-            place value of textbox into text of div and name of selected entity
-        turn div into link.
-      */
-
-      // div on click
-      /*
-      $(div).on('dblclick', () => {
-        var name = $('div').html();
-        var input = $(`<textarea id="edit-input" value="${name}" draggable="draggable" resizeable="resizeable" />`).appendTo('html > body').get(0);
-        input
-        input.style.position = 'absolute';
-        input.style.left = div.style.left;
-        input.style.top = div.style.top;
-        
-        $(input).on('blur', function(){
-          var value = JSON.parse($(input).val());
-          $(options.vertex.label.element).clear();
-
-          if(value){
-
-          }
-        })
-
-        console.log('input', input)
-      });
-      */
 
       var _this = this;
  
@@ -121,8 +88,8 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
         },
         get2DCoords: function(position, camera) {
           var vector = position.project(camera);
-          vector.x = (vector.x + 1)/2 * window.innerWidth;
-          vector.y = -(vector.y - 1)/2 * window.innerHeight + options.offset;
+          vector.x = this.element.offset.left + (vector.x + 1)/2 * window.innerWidth;
+          vector.y = - this.element.offset.top + (vector.y - 1)/2 * window.innerHeight + options.offset;
           return vector;
         },
         remove: () => {
@@ -134,7 +101,7 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       return label;
     };
 
-    var label = _createTextLabel();
+    var label = _createTextLabel(shadowRoot);
     if(Label.all){
       Label.all.push(label);
     }else{
@@ -148,7 +115,7 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
   Label.all = [];
   
-  Vertex.prototype.paint = function(scene){
+  Vertex.prototype.paint = function(scene, shadowRoot){
     var object = this.object = new THREE.Group();
     this.object.position.set(
       Math.random()*10,
@@ -182,7 +149,7 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     if(this.options.label && this.options.label.text){
       this.options.label.object = this.object;
       this.options.label.vertex = this;
-      var label = new Label(this.options.label);
+      var label = new Label(shadowRoot, this.options.label);
     }
     
     scene.add(object);
@@ -301,7 +268,7 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     options = options || {};
     
     var v = new Vertex(this.g.add_vertex(), options);
-    v.paint(this.scene);
+    v.paint(this.scene, shadowRoot);
     this.V.set(v.id, v);
     v.object.vertex = v;
     
