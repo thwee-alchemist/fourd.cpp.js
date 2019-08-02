@@ -3,6 +3,7 @@ class Dynamic3DGraph extends HTMLElement {
     super();
     const shadowRoot = this.attachShadow({mode: 'open'});
     var container = document.createElement('div');
+    container.style.position = 'relative';
     
     container.id = 'display';
     shadowRoot.appendChild(container)

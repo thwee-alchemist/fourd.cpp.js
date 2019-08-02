@@ -52,62 +52,51 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     };
   };
 
-  var Label = function(options){
-    options = Object.assign({offset: 0}, options);
-    
-    // thanks, https://codepen.io/dxinteractive/pen/reNpOR
-    var _createTextLabel = function() {
-      var div = document.createElement('div');
-      element.appendChild(div);
-      div.className = 'text-label';
-      div.style.position = 'absolute';
-      div.style.width = 100;
-      div.style.height = 100;
-      div.innerHTML = options.text;
-      div.style.top = -1000;
-      div.style.left = -1000;
+  class Label {
+    constructor(options){
+      options = Object.assign({offset: 0}, options);
 
-      var _this = this;
- 
-      var label = {
-        element: div,
-        parent: options.object,
-        position: new THREE.Vector3(),
-        updatePosition: function(camera) {
-          if(parent) {
-            this.position.copy(this.parent.position);
-          }
-          
-          var coords2d = this.get2DCoords(this.position, camera);
-          this.element.style.left = coords2d.x + 'px';
-          this.element.style.top = coords2d.y + 'px';
-        },
-        get2DCoords: function(position, camera) {
-          var vector = position.project(camera);
-          vector.x = (vector.x + 1)/2 * this.element.width;
-          vector.y = -(vector.y - 1)/2 * this.element.height + options.offset;
-          return vector;
-        },
-        remove: () => {
-          element.removeChild(div);
-        }
-      };
+      this.display = shadowRoot.querySelector('#display');
+      this.parent = options.parent;
+      this.position = new THREE.Vector3();
 
-      options.vertex.label = label;
-      return label;
-    };
+      this.element = document.createElement('div');
+      this.element.className = 'text-label';
+      this.element.style.position = 'absolute';
+      this.element.innerHTML = options.text;
 
-    var label = _createTextLabel();
-    if(Label.all){
-      Label.all.push(label);
-    }else{
-      Label.all = [label];
+      this.display.appendChild(this.element)
+
+      options.vertex.label = this;
+
+      if(Label.all){
+        Label.all.push(this);
+      }else{
+        Label.all = [this];
+      }
+
+      this.updatePosition(camera);
     }
-    return label;
 
-		//var sprite = makeTextSprite(options.text, options);
-    // return sprite;
-  };
+    get2DCoords(position, camera) {
+      var vector = position.project(camera);
+      vector.x = (vector.x + 1)/2 * this.display.style.width;
+      vector.y = -(vector.y - 1)/2 * this.display.style.height + options.offset;
+      return vector;
+    }
+
+    updatePosition(camera) {
+      this.position.copy(this.parent.position);
+      
+      var coords2d = this.get2DCoords(this.position, camera);
+      this.element.style.left = `${coords2d.x}px`;
+      this.element.style.top = `${coords2d.y}px`;
+    }
+
+    remove() {
+      this.display.removeChild(this.element);
+    }
+  }
 
   Label.all = [];
   
@@ -514,9 +503,9 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     */
     controls.update(clock.getDelta());
 
-    for(var i=0; i<Label.all.length; i++){
-      Label.all[i].updatePosition(camera);
-    }
+    Label.all.forEach(label => {
+      label.updatePosition(camera);
+    })
     
     renderer.render(scene, camera);
   };
