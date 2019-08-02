@@ -1,7 +1,3 @@
-var jQuery = $ = require('jquery')
-var THREE = require('three')
-var OrbitControls = require('three-orbit-controls')(THREE)
-
 FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   var that = this;
   var CONSTANTS = {
