@@ -53,21 +53,22 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   class Label {
-    constructor(options){
-      options = Object.assign({offset: 0}, options);
+    constructor(parent, options){
+      
+      this.options = Object.assign({offset: 0}, options);
 
       this.display = shadowRoot.querySelector('#display');
-      this.parent = options.parent;
-      this.position = new THREE.Vector3();
+      this.parent = parent;
 
       this.element = document.createElement('div');
       this.element.className = 'text-label';
       this.element.style.position = 'absolute';
       this.element.innerHTML = options.text;
+      this.display.appendChild(this.element);
+      this.element.style.left = '0px'
+      this.element.style.top = '0px'
 
-      this.display.appendChild(this.element)
-
-      options.vertex.label = this;
+      this.options.vertex.label = this;
 
       if(Label.all){
         Label.all.push(this);
@@ -78,19 +79,30 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       this.updatePosition(camera);
     }
 
+    between(min, val, max){
+      if(val < min)
+        return min;
+      if(val > max)
+        return max;
+      return val;
+    }
+
     get2DCoords(position, camera) {
       var vector = position.project(camera);
-      vector.x = (vector.x + 1)/2 * this.display.style.width;
-      vector.y = -(vector.y - 1)/2 * this.display.style.height + options.offset;
+      vector.x = (vector.x + 1)/2 * this.display.clientWidth;
+      vector.y = (-(vector.y - 1)/2 * this.display.clientHeight) + this.options.offset;
+
+      vector.x = this.between(0, vector.x, this.display.clientWidth);
+      vector.y = this.between(0, vector.y, this.display.clientHeight);
+
       return vector;
     }
 
     updatePosition(camera) {
-      this.position.copy(this.parent.position);
-      
-      var coords2d = this.get2DCoords(this.position, camera);
-      this.element.style.left = `${coords2d.x}px`;
-      this.element.style.top = `${coords2d.y}px`;
+      var coords2d = this.get2DCoords(this.parent.position.clone(), camera);
+
+      this.element.style.left = coords2d.x + 'px';
+      this.element.style.top = coords2d.y + 'px';
     }
 
     remove() {
@@ -134,7 +146,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     if(this.options.label && this.options.label.text){
       this.options.label.object = this.object;
       this.options.label.vertex = this;
-      var label = new Label(this.options.label);
+      var label = new Label(cube.vertex, this.options.label);
     }
     
     scene.add(object);
@@ -444,6 +456,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       v.object.position.x = positions[v.id].x;
       v.object.position.y = positions[v.id].y;
       v.object.position.z = positions[v.id].z;
+      v.position = v.object.position.clone();
     }
 
     for(var e of this.E.values()){
