@@ -57,7 +57,7 @@ FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     
     // thanks, https://codepen.io/dxinteractive/pen/reNpOR
     var _createTextLabel = function(shadowRoot) {
-      var div = shadowRoot.createElement('div');
+      var div = document.createElement('div');
       shadowRoot.appendChild(div);
       div.className = 'text-label';
       div.style.position = 'absolute';

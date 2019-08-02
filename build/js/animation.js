@@ -1,10 +1,5 @@
 'use strict';
 
-require('jquery')
-require('jquery-ui')
-require('three')
-require('three-orbitcontrols')
-
 FourDCtrl = function(selector, options, default_settings, LayoutGraph){
   var that = this;
   var CONSTANTS = {
