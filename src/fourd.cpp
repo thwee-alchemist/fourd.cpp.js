@@ -45,7 +45,8 @@ EMSCRIPTEN_BINDINGS(fourd){
     .function("get_e", &LayoutGraph::get_e, allow_raw_pointers())
     .function("center_x", &LayoutGraph::center_x)
     .function("center_y", &LayoutGraph::center_y)
-    .function("center_z", &LayoutGraph::center_z);
+    .function("center_z", &LayoutGraph::center_z)
+    .function("clear", &LayoutGraph::clear);
 }
 #endif
 

@@ -209,3 +209,11 @@ float LayoutGraph::center_y(){
 float LayoutGraph::center_z(){
   return center[2];
 }
+
+void LayoutGraph::clear(){
+  vertex_id = 0;
+  edge_id = 0;
+  E.clear();
+  V.clear();
+  m.clear();
+}

@@ -43,19 +43,28 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       return this.id.toString();
     };
     
-    if(!this.options.hasOwnProperty('label')){
+    if(!this.options.label){
       this.options.label = {
         text: '',
         direction: 'x',
-        distance: '10'
+        distance: '10',
+        color: 'white'
       };
     };
   };
 
   class Label {
     constructor(parent, options){
+
+      console.log(options)
       
-      this.options = Object.assign({offset: 0}, options);
+      this.options = Object.assign({
+        text: '',
+        offset: 0,
+        color: 0x000000
+      }, options);
+
+      console.log('label options', this.options)
 
       this.display = shadowRoot.querySelector('#display');
       this.parent = parent;
@@ -64,9 +73,12 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       this.element.className = 'text-label';
       this.element.style.position = 'absolute';
       this.element.innerHTML = options.text;
-      this.display.appendChild(this.element);
+
       this.element.style.left = '0px'
       this.element.style.top = '0px'
+      this.element.style.color = this.options.color;
+
+      this.display.appendChild(this.element);
 
       this.options.vertex.label = this;
 
@@ -112,23 +124,24 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
   Label.all = [];
   
-  Vertex.prototype.paint = function(scene){
+  Vertex.prototype.paint = function(scene, options){
     var object = this.object = new THREE.Group();
+    
     this.object.position.set(
       Math.random()*10,
       Math.random()*10,
       Math.random()*10
     );
     
-    if(!this.options){
-      this.options = {
-        cube: {
-          size: 10, 
-          color: 0xffffff,
-          wireframe: false
-        }
-      };
-    }
+    this.options = Object.assign({
+      cube: {
+        size: 10, 
+        color: 0x000000,
+        wireframe: false
+      }
+    }, options);
+
+    console.log('Vertex paint options', this.options)
 
     if(this.options.cube.size){
       this.options.cube.width = this.options.cube.size;
@@ -197,12 +210,34 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     return this.source.toString() + '-->' + this.target.toString(); 
   };
 
-  Edge.prototype.destroy = function(scene){
+  Edge.prototype.destroy = function(graph){
+    
+
     console.assert(scene);
-    scene.remove(this.object);
-    this.object.edge = undefined;
+    graph.scene.remove(this.object);
+    // this.object.edge = undefined;
+
+    // remove edge from listings
+    try{
+      let neighbors = graph.E_by_V.get(this.source.id)
+      graph.E_by_V.get(this.source.id).splice(neighbors.findIndex(e => e.id == this.id), 1)
+    }catch(e){
+      console.error(e)
+    }
+
+    try{
+      let neighbors = graph.E_by_V.get(this.target.id)
+      graph.E_by_V.get(this.target.id).splice(neighbors.findIndex(e => e.id == this.id), 1)
+    }catch(e){
+      console.error(e);
+    }
+
+    graph.g.remove_edge(this.id);
+    graph.E.delete(this.id);
     delete this.object;
   };
+
+
 	
   // Graph
   var Graph = function(scene){
@@ -231,20 +266,19 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     return this.add_edge(src, tgt, false, 1.0);
   };
 
-
-  // api
   Graph.prototype.clear = function(){
+    console.log('clear');
 
-    for(var e in this.E.values()){
-      e.destroy(this.scene);
-    }
+    this.g.clear();
 
-    for(var v in this.V.values()){
-      // this.scene.remove...
-      scene.remove(v.object);
-      // this.V[v].destroy();
-    }
-    
+    [...this.E.values()].forEach(e => {
+      this.remove_edge(e.id);
+    });
+
+    [...this.V.values()].forEach(v => {
+      this.remove_vertex(v.id);
+    })
+
     this.V = new Map();
     this.E = new Map();
     this.E_by_V = new Map();
@@ -259,10 +293,13 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
   // api
   Graph.prototype.add_vertex = function(options){
-    options = options || {};
-    
+    options = Object.assign({
+      cube: {},
+      label: {}
+    }, options);
+
     var v = new Vertex(this.g.add_vertex(), options);
-    v.paint(this.scene);
+    v.paint(this.scene, options);
     this.V.set(v.id, v);
     v.object.vertex = v;
     
@@ -310,29 +347,17 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 	
 	Graph.prototype.add_invisible_edge = function(source, targe, optionst){
 		return this.add_edge(source, target, Object.assign(options, {opacity: 0.0}));
-	}
+  }
 
   Graph.prototype.remove_edge = function(edge_id){
-
-    // remove from fourd.cpp
-    this.g.remove_edge(edge_id);
-
     // lookup edge
     var edge = this.E.get(edge_id);
-    
-    // remove edge from listings
-    var edges = this.E_by_V.get(edge.source.id);
-    if(edges){
-      this.E_by_V.set(edge.source.id, edges.splice(edges.indexOf(edge.id), 1));
-    }
-    edges = this.E_by_V.get(edge.target.id);
-    if(edges){
-      this.E_by_V.set(edge.target.id, edges.splice(edges.indexOf(edge.id), 1));
-    }
 
     // destroy edge
-    edge.destroy(this.scene);
-    this.E.delete(edge_id);
+    edge.destroy(this);
+
+
+    // remove from fourd.cpp
   };
 
   Graph.prototype.toString = function(){
@@ -356,10 +381,13 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       }
 
       // remove edges
-      this.E_by_V.get(vertex_id).forEach(e => this.remove_edge(e))
+      let edges = this.E_by_V.get(vertex_id);
+      if(edges){
+        edges.forEach(e => this.E.get(e).destroy(this))
+      }
 
       // remove
-      this.E_by_V.delete(vertex_id);
+      this.E_by_V.set(vertex_id, []);
       this.scene.remove(vertex.object);
       this.V.delete(vertex.id);
     }
@@ -422,7 +450,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     return cube;
   };
 
-  // apiish this will change
   // todo: make line options like cube options
   var line = function(scene, source, target, options){
     // var geometry = new THREE.BufferGeometry();

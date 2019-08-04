@@ -54,6 +54,8 @@ class LayoutGraph {
     float center_z();
 
     Vec3f* positions;
+
+    void clear();
 };
 
 #endif
