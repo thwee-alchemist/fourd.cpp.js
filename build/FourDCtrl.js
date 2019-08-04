@@ -55,16 +55,12 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
   class Label {
     constructor(parent, options){
-
-      console.log(options)
       
       this.options = Object.assign({
         text: '',
         offset: 0,
         color: 0x000000
       }, options);
-
-      console.log('label options', this.options)
 
       this.display = shadowRoot.querySelector('#display');
       this.parent = parent;
@@ -140,8 +136,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
         wireframe: false
       }
     }, options);
-
-    console.log('Vertex paint options', this.options)
 
     if(this.options.cube.size){
       this.options.cube.width = this.options.cube.size;
@@ -267,7 +261,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Graph.prototype.clear = function(){
-    console.log('clear');
 
     this.g.clear();
 
@@ -632,7 +625,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     controls.dragToLook = true;
     
     this.intersect_callback = function(object){
-      console.log(object.vertex);
+      // console.log(object.vertex);
     };
 
     this.resolve_click = function(event){
