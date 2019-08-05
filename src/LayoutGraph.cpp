@@ -38,6 +38,16 @@ LayoutGraph::LayoutGraph(Settings* _settings){
   m = std::map<int, bool>();
 };
 
+LayoutGraph::~LayoutGraph(){
+  clear();
+
+  vertex_id = 0;
+  edge_id = 0;
+  delete &settings;
+  delete &T;
+  delete &positions;
+}
+
 int LayoutGraph::add_vertex(){
   Vertex* vertex = new Vertex(++vertex_id);
   V.push_back(vertex);
@@ -72,7 +82,9 @@ void LayoutGraph::remove_vertex(int vertex_id){
 
   for(Vertex* vertex : V){
     if(vertex->id == vertex_id){
+      // here
       V.erase(index);
+      delete vertex;
     }
 
     index++;
@@ -84,6 +96,7 @@ void LayoutGraph::remove_edge(int edge_id){
   for(Edge* edge : E){
     if(edge->id == edge_id){
       E.erase(index);
+      delete edge;
     }
 
     index++;

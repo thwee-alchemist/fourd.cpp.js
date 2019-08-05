@@ -33,7 +33,7 @@ all: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/Vertex
 bundle: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js
 	make all
 	cp build/fourd.wasm dist/fourd.wasm
-	cat build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js > dist/dynamic-graph.bundle.min.js
+	minify build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js > dist/dynamic-graph.bundle.min.js
 
 
 debug: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js

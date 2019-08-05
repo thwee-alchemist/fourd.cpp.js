@@ -31,6 +31,7 @@ class LayoutGraph {
   public:
     LayoutGraph();
     LayoutGraph(Settings* _settings);
+    ~LayoutGraph();
     int add_vertex();
     int add_edge(int source, int target, bool directed=false, float strength=1.0);
     void remove_vertex(int);

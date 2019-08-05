@@ -107,6 +107,10 @@ class Dynamic3DGraph extends HTMLElement {
   remove_edge(id){
     return this._fourd.graph.remove_edge(id);
   }
+
+  select(id){
+    return this._fourd.select(id);
+  }
 };
 
 window.customElements.define('dynamic-graph', Dynamic3DGraph);

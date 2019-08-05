@@ -145,7 +145,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
     if(this.options.cube){
       var cube = new Cube(this.options.cube);
-			cube.geometry.computeFaceNormals();
+      cube.geometry.computeFaceNormals();
       this.object.add(cube);
       cube.position.set(0, 0, 0);
 			cube.vertex = this;
@@ -196,8 +196,15 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Edge.prototype.paint = function(scene, options){
-    this.object = line(scene, this.source.object.position, this.target.object.position, options);
+    if(!options.arrow){
+      this.object_type = 'line';
+      this.object = line(scene, this.source.object.position, this.target.object.position, options);
+    }else{
+      this.object_type = 'arrow'
+      this.object = arrow(this.source.object.position.clone(), this.target.object.position.clone(), options);
+    }
     this.object.edge = this;
+    scene.add(this.object)
   };
 
   Edge.prototype.toString = function(){
@@ -205,9 +212,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Edge.prototype.destroy = function(graph){
-    
-
-    console.assert(scene);
+    console.assert(graph.scene);
     graph.scene.remove(this.object);
     // this.object.edge = undefined;
 
@@ -231,8 +236,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     delete this.object;
   };
 
-
-	
   // Graph
   var Graph = function(scene){
     this.scene = scene;
@@ -284,7 +287,6 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     return '_' + source.toString() + '_' + target.toString();
   };
 
-  // api
   Graph.prototype.add_vertex = function(options){
     options = Object.assign({
       cube: {},
@@ -300,13 +302,12 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Graph.prototype.add_camera_vertex = function(camera){
-    var v = new CameraVertex(this.vertex_id_spawn++, camera);
+    var v = new CameraVertex(this.vertex_id_spawn++, graph.camera);
     v.position = v.object.position;
     this.V.set(v.id, v);
     return v;
   };
 
-  // api
   Graph.prototype.add_edge = function(source_id, target_id, options){
     console.assert(source_id !== undefined, "target must not be undefined");
     console.assert(target_id !== undefined, "target must not be undefined");
@@ -338,8 +339,8 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     return edge.id;
   };
 	
-	Graph.prototype.add_invisible_edge = function(source, targe, optionst){
-		return this.add_edge(source, target, Object.assign(options, {opacity: 0.0}));
+	Graph.prototype.add_invisible_edge = function(source_id, target_id, options){
+		return this.add_edge(source_id, target_id, Object.assign(options, {opacity: 0.0}));
   }
 
   Graph.prototype.remove_edge = function(edge_id){
@@ -459,13 +460,21 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     options.linewidth = options.linewidth || 1; 
     var material = new THREE.LineBasicMaterial({color: options.color});
 
-    var line = new THREE.Line( geometry, material );
-    line.frustumCulled = false;
-      
-    scene.add(line);
+    var line = new THREE.Line( geometry, material ); 
+    line.frustumCulled = false; 
     line.geometry.verticesNeedUpdate = true;
     return line;
   };
+
+  var arrow = function(source, target, options){
+    let direction = source.clone().sub(target);
+    let length = direction.length() * 0.80;
+    var arrow = new THREE.ArrowHelper(direction.normalize().negate(), source.clone(), length, options.color);
+        
+    arrow.line.frustumCulled = false;
+    arrow.line.geometry.verticesNeedUpdate = true;
+    return arrow
+  }
   
   var edges = false;
   Graph.prototype.layout = function(){
@@ -484,21 +493,29 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       var source = edge.source.object.position;
       var target = edge.target.object.position;
 
-      edge.object.geometry.vertices[0].x = source.x;
-      edge.object.geometry.vertices[0].y = source.y;
-      edge.object.geometry.vertices[0].z = source.z;
+      if(edge.object_type == 'line'){
+        edge.object.geometry.vertices[0].x = source.x;
+        edge.object.geometry.vertices[0].y = source.y;
+        edge.object.geometry.vertices[0].z = source.z;
 
-      edge.object.geometry.vertices[1].x = target.x;
-      edge.object.geometry.vertices[1].y = target.y;
-      edge.object.geometry.vertices[1].z = target.z;
+        edge.object.geometry.vertices[1].x = target.x;
+        edge.object.geometry.vertices[1].y = target.y;
+        edge.object.geometry.vertices[1].z = target.z;
 
-      edge.object.geometry.verticesNeedUpdate = true;
-      //edge.object.geometry.computeBoundingSphere();
+        edge.object.geometry.verticesNeedUpdate = true;
+        //edge.object.geometry.computeBoundingSphere();
+      }else if(edge.object_type == 'arrow'){
+        this.scene.remove(edge.object);
+        delete edge.object;
+        edge.object = new arrow(source, target, edge.options);
+        this.scene.add(edge.object);
+      }
     }
   };
 
-  FourDCtrl.prototype.select = function(vertex){
-		if(!vertex) return;
+
+
+  FourDCtrl.prototype.select = function(vertex_id){
 		
 		if(that.selected){
 			that.graph.remove_edge(that.camera_edge.id);
@@ -506,11 +523,15 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 			that.graph.remove_vertex(that.camera_vertex);
 			delete that.camera_vertex;
 		}
-		
-		var camera = that._internals.camera;
-		that.camera_vertex = that.graph.add_camera_vertex(camera);
-		that.camera_edge = that.graph.add_invisible_edge(vertex, that.camera_vertex);
-		that.selected = vertex;
+    
+    if(vertex_id !== null){
+      var camera = that._internals.camera;
+      that.camera_vertex = that.graph.add_camera_vertex(camera);
+      that.camera_edge = that.graph.add_invisible_edge(vertex_id, that.camera_vertex,id);
+      that.selected = this.V.get(vertex_id);
+    }
+
+    return that.camera_vertex.id;
 	};
 	
 	FourDCtrl.prototype.deselect = function(){
@@ -529,12 +550,17 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
     requestAnimationFrame(render);
 
     graph.layout();
+
     /*
     camera.position.x = graph.g.center_x();
     camera.position.y = graph.g.center_y();
     camera.position.z = graph.g.center_z() - 500;
     */
+
     controls.update(clock.getDelta());
+    if(graph.selected){
+      camera.lookAt(graph.selected.position)
+    }
 
     Label.all.forEach(label => {
       label.updatePosition(camera);
