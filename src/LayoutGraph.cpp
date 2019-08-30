@@ -224,8 +224,8 @@ float LayoutGraph::center_z(){
 }
 
 void LayoutGraph::clear(){
-  vertex_id = 0;
-  edge_id = 0;
+  vertex_id = -1;
+  edge_id = -1;
   E.clear();
   V.clear();
   m.clear();

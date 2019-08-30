@@ -35,7 +35,7 @@ class Dynamic3DGraph extends HTMLElement {
       that._graph.settings.attraction = 3e-3;
       that._graph.settings.epsilon = 1e-4;
       that._graph.settings.friction = 3e-1;
-      that._graph.settings.inner_distance = 1e2;
+      that._graph.settings.inner_distance = 1e6;
       that._settings = that.graph.settings;
     }
   }
@@ -108,8 +108,8 @@ class Dynamic3DGraph extends HTMLElement {
     return this._fourd.graph.remove_edge(id);
   }
 
-  select(id){
-    return this._fourd.select(id);
+  look_at(id){
+    return this._fourd.graph.look_at(id);
   }
 };
 
