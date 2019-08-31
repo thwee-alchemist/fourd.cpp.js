@@ -92,11 +92,11 @@ class Dynamic3DGraph extends HTMLElement {
     return this._fourd.graph.clear();
   }
 
-  add_vertex(options=this.vertex_options){
+  add_vertex(options=Object.assign({}, this._vertex_options)){
     return this._fourd.graph.add_vertex(options);
   }
 
-  add_edge(source, target, options=this.edge_options){
+  add_edge(source, target, options=Object.assign({}, this._edge_options)){
     return this._fourd.graph.add_edge(source, target, options);
   }
 

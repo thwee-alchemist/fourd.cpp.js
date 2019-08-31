@@ -32,6 +32,8 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   var Vertex = function(id, options){
     this.options = options || {};
     this.id = id;
+
+    this.edges = new Set();
     
     this.position = new THREE.Vector3(
       Math.random(),
@@ -214,25 +216,22 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
   };
 
   Edge.prototype.destroy = function(graph){
+    graph.g.remove_edge(this.id);
     graph.scene.remove(this.object);
     // this.object.edge = undefined;
 
     // remove edge from listings
-    try{
-      let neighbors = graph.E_by_V.get(this.source.id)
-      graph.E_by_V.get(this.source.id).splice(neighbors.findIndex(e => e.id == this.id), 1)
-    }catch(e){
+    /*
+    var source_edge_list = graph.E_by_V.get(this.source.id);
+    source_edge_list.splice(source_edge_list.indexOf(this.id), 1);
 
-    }
+    var target_edge_list = graph.E_by_V.get(this.target.id);
+    target_edge_list.splice(target_edge_list.indexOf(this.id), 1);
+    */
 
-    try{
-      let neighbors = graph.E_by_V.get(this.target.id)
-      graph.E_by_V.get(this.target.id).splice(neighbors.findIndex(e => e.id == this.id), 1)
-    }catch(e){
-
-    }
-
-    graph.g.remove_edge(this.id);
+    this.source.edges.delete(this.id);
+    this.target.edges.delete(this.id);
+    
     graph.E.delete(this.id);
     delete this.object;
   };
@@ -278,7 +277,7 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
 
     this.V = new Map(); // vertex.id -> edge
     this.E = new Map(); // edge.id -> edge
-    this.E_by_V = new Map(); // vertex_id -> [edges]
+    // this.E_by_V = new Map(); // vertex_id -> [edges]
     this.edge_counts = {};
     this.edge_id_spawn = 0;
     this.vertex_id_spawn = 0;
@@ -338,26 +337,20 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
       color: 0x000000,
       opacity: 1.0,
       transparent: false,
+      arrow: false
     }, options);
 
     var source = this.V.get(source_id);
     var target = this.V.get(target_id);
-    var edge = new Edge(this.g.add_edge(source_id, target_id, false, options.opacity), source, target, options);
+
+    var edge = new Edge(this.g.add_edge(source_id, target_id, options.directed, options.strength), source, target, options);
     this.E.set(edge.id, edge);
 
-    if(this.E_by_V.has(source_id)){
-      this.E_by_V.get(source_id).push(edge.id);
-    }else{
-      this.E_by_V.set(source_id, [edge.id]);
-    }
-
-    if(this.E_by_V.has(target_id)){
-      this.E_by_V.get(target_id).push(edge.id);
-    }else{
-      this.E_by_V.set(target_id, [edge.id]);
-    }
-    
     edge.paint(this.scene, options);
+
+    source.edges.add(edge.id);
+    target.edges.add(edge.id);
+
     return edge.id;
   };
 	
@@ -398,14 +391,13 @@ var FourDCtrl = function(shadowRoot, options, default_settings, LayoutGraph){
         vertex.label.remove();
       }
 
-      // remove edges
-      let edges = this.E_by_V.get(vertex_id);
-      if(edges){
-        edges.forEach(e => this.E.get(e).destroy(this))
-      }
+      vertex.edges.forEach(edge => {
+        console.log(edge);
+        this.remove_edge(edge)
+      });
 
       // remove
-      this.E_by_V.set(vertex_id, []);
+      // this.E_by_V.delete(vertex_id, []);
       this.scene.remove(vertex.object);
       this.V.delete(vertex.id);
     }
