@@ -28,4 +28,7 @@ bool Edge::operator==(const Edge& other){
 Edge::~Edge(){
   source->edges->erase(this);
   target->edges->erase(this);
+
+  source = NULL;
+  target = NULL;
 }

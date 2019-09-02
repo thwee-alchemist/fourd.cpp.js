@@ -41,6 +41,11 @@ Vertex::Vertex(int vertex_id){
 }
 Randomator* Vertex::ra = new Randomator();
 
+Vertex::~Vertex(){
+  edges->clear();
+  delete edges;
+}
+
 gmtl::Vec3f Vertex::pairwise_repulsion(const gmtl::Vec3f& one, const gmtl::Vec3f& other, Settings* settings){
   gmtl::Vec3f diff = one - other;
   float abs_diff = _length(diff);

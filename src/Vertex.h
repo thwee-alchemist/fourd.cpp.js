@@ -45,6 +45,8 @@ class Vertex {
   float get_z();
   bool operator==(const Vertex&);
   string toString();
+
+  ~Vertex();
 };
 
 

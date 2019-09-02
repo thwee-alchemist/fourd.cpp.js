@@ -39,13 +39,25 @@ LayoutGraph::LayoutGraph(Settings* _settings){
 };
 
 LayoutGraph::~LayoutGraph(){
-  clear();
+  // clear();
 
   vertex_id = 0;
   edge_id = 0;
-  delete &settings;
-  delete &T;
-  delete &positions;
+  // delete &settings;
+
+  for(int i=0; i<E.size(); i++){
+    delete E[i];
+  }
+
+  for(int i=0; i<V.size(); i++){
+    delete V[i];
+  }
+
+  E.clear();
+  V.clear();
+
+  m.clear();
+  delete []positions;
 }
 
 int LayoutGraph::add_vertex(){

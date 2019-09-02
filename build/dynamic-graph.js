@@ -2,14 +2,9 @@ class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
     this.shadow = this.attachShadow({mode: 'open'});
-    this.connectedCallback();
+    // this.connectedCallback();
 
-    
 
-    this.addEventListener('wasm-ready', (e) => {
-      console.log(e);
-      this.setupWasm(e.detail.module)
-    })
     console.info('dynamic-graph instantiated')
   }
 
@@ -41,6 +36,13 @@ class Dynamic3DGraph extends HTMLElement {
   }
 
   connectedCallback(){
+    console.info('connectedCallback')
+
+    this.addEventListener('wasm-ready', (e) => {
+      console.log('wasm-ready event');
+      this.setupWasm(e.detail.module)
+    })
+
     this.ready = new Promise((resolve, reject) => {
       this.resolve_graph = resolve;
       var container = document.createElement('div');
