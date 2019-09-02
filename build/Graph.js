@@ -26,6 +26,7 @@
 
   Graph.prototype.disconnect = function(){
     console.info('Graph disconnect')
+
     this.clear();
     this.g.delete();
   }
@@ -42,10 +43,6 @@
 
   Graph.prototype.clear = function(){
 
-    console.info('before clear')
-    this.g.clear();
-    console.info('after clear');
-
     [...this.E.values()].forEach(e => {
       this.remove_edge(e.id);
     });
@@ -53,6 +50,10 @@
     [...this.V.values()].forEach(v => {
       this.remove_vertex(v.id);
     })
+
+    console.info('before clear')
+    this.g.clear();
+    console.info('after clear');
 
     this.V = new Map(); // vertex.id -> edge
     this.E = new Map(); // edge.id -> edge

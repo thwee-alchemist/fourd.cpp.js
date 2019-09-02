@@ -2,7 +2,14 @@ class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
     this.shadow = this.attachShadow({mode: 'open'});
-    this.connectedCallback().then(this.setupWasm.bind(this, this.Module));
+    this.connectedCallback();
+
+    
+
+    this.addEventListener('wasm-ready', (e) => {
+      console.log(e);
+      this.setupWasm(e.detail.module)
+    })
     console.info('dynamic-graph instantiated')
   }
 
@@ -49,22 +56,36 @@ class Dynamic3DGraph extends HTMLElement {
 
       var that = this;
 
-      this.resolve_module = new Promise((resolve2, reject2) => {
+      if(!this.Module){
         Module.onRuntimeInitialized = () => {
+          Module.noExitRuntime = true;
           this.Module = Module;
-          resolve2(Module);
+          
+          this.dispatchEvent(new CustomEvent('wasm-ready', {
+            bubbles: false,
+            detail: {
+              module: Module
+            }
+          }))
         }
-      });
+      }else{
+        this.dispatchEvent(new CustomEvent('wasm-ready', {
+          bubbles: false,
+          detail: {
+            module: this.Module
+          }
+        }))
+      }
     })
 
-    this.resolve_module.then(this.setupWasm.bind(this));
-
-    this.ready.then((val) => {
+    this.ready.then(() => {
       this.running = true;
-      return val;
+      this.dispatchEvent(new CustomEvent('start', {
+        bubbles: true,
+        detail: null
+      }));
     });
 
-    return this.ready;
   }
 
 
@@ -84,7 +105,12 @@ class Dynamic3DGraph extends HTMLElement {
   }
 
   disconnectedCallback(){
+    this.dispatchEvent(new CustomEvent('stop', {
+      bubbles: true,
+      detail: null
+    }))
     this.running = false;
+    // this.clear();
     this._fourd.disconnect();
   }
   

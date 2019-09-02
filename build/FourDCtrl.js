@@ -197,6 +197,7 @@ class FourDController {
     cancelAnimationFrame(this.requestId);
 
     this.graph.disconnect();
+    console.info('FourDCtrl disconnected')
   }
 
   camera_vertex(){
