@@ -38,7 +38,18 @@ bundle: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js
 debug: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js
 	make all
 	cp build/fourd.wasm dist/fourd.wasm
-	cat build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js > dist/dynamic-graph.bundle.min.js
-	cp dist/fourd.wasm ../fourdd/public/.
-	cp dist/dynamic-graph.bundle.min.js ../fourdd/public/.
+
+	rm dist/dynamic-graph.bundle.min.js
+	cat build/r105.three.min.js >> dist/dynamic-graph.bundle.min.js
+	cat build/OrbitControls.js >> dist/dynamic-graph.bundle.min.js
+	cat build/fourd.js >> dist/dynamic-graph.bundle.min.js
+
+	cat build/Vertex.js >> dist/dynamic-graph.bundle.min.js
+	cat build/Edge.js >> dist/dynamic-graph.bundle.min.js
+	cat build/Graph.js >> dist/dynamic-graph.bundle.min.js
+	cat build/FourDCtrl.js >> dist/dynamic-graph.bundle.min.js
+	cat build/dynamic-graph.js >> dist/dynamic-graph.bundle.min.js
+
+	cp dist/fourd.wasm ../portfolio/.
+	cp dist/dynamic-graph.bundle.min.js ../portfolio/.
 	
