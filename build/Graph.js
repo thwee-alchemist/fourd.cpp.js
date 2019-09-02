@@ -15,21 +15,19 @@
     this.E_by_V = new Map();
 
     this.settings = default_settings();
-    this.g = new LayoutGraph(this.settings);
   };
 
   Graph.prototype.connect = function(){
     console.info("Graph.connect")
     var LayoutGraph = this.LayoutGraph;
     this.g = new LayoutGraph(this.settings);
-    this.resolve(this.g);
+    this.resolve(true);
   }
 
   Graph.prototype.disconnect = function(){
     console.info('Graph disconnect')
     this.clear();
     this.g.delete();
-    this.settings.delete();
   }
 
   Graph.prototype.random_edge = function(){
@@ -44,7 +42,9 @@
 
   Graph.prototype.clear = function(){
 
+    console.info('before clear')
     this.g.clear();
+    console.info('after clear');
 
     [...this.E.values()].forEach(e => {
       this.remove_edge(e.id);

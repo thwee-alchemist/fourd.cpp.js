@@ -1,15 +1,41 @@
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
-
     super();
     this.shadow = this.attachShadow({mode: 'open'});
-    // this.connectedCallback()
+    this.connectedCallback().then(this.setupWasm.bind(this, this.Module));
     console.info('dynamic-graph instantiated')
   }
 
+  setupWasm(Module){
+    console.info('setupWasm')
+    this._fourd = new FourDController(
+      this.shadow,
+      {
+        border: 'none',
+        width: this.width,
+        height: this.height,
+        background: this.background
+      }, 
+      Module.default_settings,
+      Module.LayoutGraph,
+      this.resolve_graph
+    );
+    this._fourd.connect();
+    this._fourd.graph.connect();
+    this._graph = this._fourd.graph;
+  
+    this._graph.settings.repulsion = 9e1;
+    this._graph.settings.attraction = 3e-3;
+    this._graph.settings.epsilon = 1e-4;
+    this._graph.settings.friction = 3e-1;
+    this._graph.settings.inner_distance = 1e6;
+    this._settings = this.graph.settings;
+    console.info('wasm setup');
+  }
+
   connectedCallback(){
-    this.ready = new Promise((res, rej) => {
-      this.resolve = res;
+    this.ready = new Promise((resolve, reject) => {
+      this.resolve_graph = resolve;
       var container = document.createElement('div');
       container.style.position = 'relative';
       container.style.width = this.width;
@@ -23,37 +49,28 @@ class Dynamic3DGraph extends HTMLElement {
 
       var that = this;
 
-      this.fd = new Promise((resolve, reject) => {
+      this.resolve_module = new Promise((resolve2, reject2) => {
         Module.onRuntimeInitialized = () => {
-          that._fourd = new FourDController(
-            that.shadow,
-            {
-              border: 'none',
-              width: that.width,
-              height: that.height,
-              background: that.background
-            }, 
-            Module.default_settings,
-            Module.LayoutGraph,
-            this.resolve
-          );
-          that._fourd.connect();
-          that._fourd.graph.connect();
-          that._graph = that._fourd.graph;
-        
-          that._graph.settings.repulsion = 9e1;
-          that._graph.settings.attraction = 3e-3;
-          that._graph.settings.epsilon = 1e-4;
-          that._graph.settings.friction = 3e-1;
-          that._graph.settings.inner_distance = 1e6;
-          that._settings = that.graph.settings;
-
-          resolve(that._fourd)
+          this.Module = Module;
+          resolve2(Module);
         }
       });
     })
 
-    this.ready.then(() => this.running = true);
+    this.resolve_module.then(this.setupWasm.bind(this));
+
+    this.ready.then((val) => {
+      this.running = true;
+      return val;
+    });
+
+    return this.ready;
+  }
+
+
+  createdCallback(){
+    console.info('dynamic-graph created')
+    this.connectedCallback();
   }
 
   attributeChangedCallback(attr, oldVal, newVal){
@@ -68,9 +85,7 @@ class Dynamic3DGraph extends HTMLElement {
 
   disconnectedCallback(){
     this.running = false;
-    this.fd.then(fd => {
-      fd.disconnect();
-    });
+    this._fourd.disconnect();
   }
   
   adoptedCallback() {
