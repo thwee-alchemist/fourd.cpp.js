@@ -1,138 +1,136 @@
-import { Module } from "module";
 
-  // Graph
-  var Graph = function(scene, default_settings, LayoutGraph, dynamic_graph){
-    console.info('Graph instantiated');
-    this.dynamic_graph = dynamic_graph;
-    this.LayoutGraph = LayoutGraph;
-    this.scene = scene;
-    this.type = 'Graph';
-    this.vertex_id_spawn = 0;
-    this.V = new Map();
+var Graph = function(scene, default_settings, LayoutGraph, dynamic_graph){
+  console.info('Graph instantiated');
+  this.dynamic_graph = dynamic_graph;
+  this.LayoutGraph = LayoutGraph;
+  this.scene = scene;
+  this.type = 'Graph';
+  this.vertex_id_spawn = 0;
+  this.V = new Map();
 
-    this.edge_id_spawn = 0;
-    this.E = new Map();
+  this.edge_id_spawn = 0;
+  this.E = new Map();
 
-    this.E_by_V = new Map();
+  this.E_by_V = new Map();
 
-    this.settings = default_settings();
-  };
+  this.settings = default_settings();
+};
 
-  Graph.prototype.connect = function(){
-    console.info("Graph.connect")
-    var LayoutGraph = this.LayoutGraph;
-    this.g = new LayoutGraph(this.settings);
-    this.dynamic_graph.running = true;
-    this.dynamic_graph.dispatchEvent(new CustomEvent('start', {
-      bubbles: true,
-      detail: null
-    }));
+Graph.prototype.connect = function(){
+  console.info("Graph.connect")
+  var LayoutGraph = this.LayoutGraph;
+  this.g = new LayoutGraph(this.settings);
+  this.dynamic_graph.running = true;
+  this.dynamic_graph.dispatchEvent(new CustomEvent('start', {
+    bubbles: true,
+    detail: null
+  }));
+}
+
+Graph.prototype.disconnect = function(){
+  console.info('Graph disconnect');
+
+  this.clear();
+  this.dynamic_graph.module.destroy(this.g);
+}
+
+Graph.prototype.random_edge = function(){
+  var src = this.V.get(Math.floor(Math.random() * this.V.length));
+  var tgt = this.V.get(Math.floor(Math.random() * this.V.length));
+  console.assert(src, "src must not be undefined");
+  console.assert(tgt, "tgt must not be undefined");
+  console.assert(src !== tgt, "src and tgt should not be equal");
+
+  return this.add_edge(src, tgt, {opacity: 1.0});
+};
+
+Graph.prototype.clear = function(){
+
+  [...this.E.values()].forEach(e => {
+    this.remove_edge(e.id);
+  });
+
+  [...this.V.values()].forEach(v => {
+    this.remove_vertex(v.id);
+  })
+
+  console.info('before clear')
+  this.g.clear();
+  console.info('after clear');
+
+  this.V = new Map(); // vertex.id -> edge
+  this.E = new Map(); // edge.id -> edge
+  // this.E_by_V = new Map(); // vertex_id -> [edges]
+  this.edge_counts = {};
+  this.edge_id_spawn = 0;
+  this.vertex_id_spawn = 0;
+};
+
+Graph.prototype._make_key = function(source, target){
+  return '_' + source.toString() + '_' + target.toString();
+};
+
+Graph.prototype.add_vertex = function(options){
+  options = Object.assign({
+    cube: {},
+    label: {}
+  }, options);
+
+  var v = new Vertex(this.g.add_vertex(), options);
+  v.paint(this.scene, options);
+  this.V.set(v.id, v);
+  v.object.vertex = v;
+  
+  return v.id;
+};
+
+Graph.prototype.add_camera_vertex = function(id, options){
+  CAMERA_TARGET = this.V.get(id);
+  CAMERA_LOCK = options.lock;
+
+  console.assert(camera);
+  console.assert(CAMERA_TARGET);
+
+  if(CAMERA_VERTEX !== null){
+    this.remove_edge(CAMERA_EDGE.id);
+    this.remove_vertex(CAMERA_VERTEX.id);
   }
+  CAMERA_VERTEX = new CameraVertex(this.g.add_vertex(), camera);
+  CAMERA_VERTEX.paint(this.scene, CAMERA_VERTEX.options)
+  
+  CAMERA_VERTEX.camera.lookAt(CAMERA_TARGET.position.clone().normalize());
+  controls.update(clock.getDelta());
+  
+  this.V.set(CAMERA_VERTEX.id, CAMERA_VERTEX);
+  return CAMERA_VERTEX;
+};
 
-  Graph.prototype.disconnect = function(){
-    console.info('Graph disconnect');
+Graph.prototype.add_edge = function(source_id, target_id, options){
+  console.assert(source_id !== undefined, "target must not be undefined");
+  console.assert(target_id !== undefined, "target must not be undefined");
 
-    this.clear();
-    Module.destroy(this.g);
-  }
+  options = Object.assign({
+    directed: false,
+    strength: 1.0,
+    color: 0x000000,
+    opacity: 1.0,
+    transparent: false,
+    arrow: false
+  }, options);
 
-  Graph.prototype.random_edge = function(){
-    var src = this.V.get(Math.floor(Math.random() * this.V.length));
-    var tgt = this.V.get(Math.floor(Math.random() * this.V.length));
-    console.assert(src, "src must not be undefined");
-    console.assert(tgt, "tgt must not be undefined");
-    console.assert(src !== tgt, "src and tgt should not be equal");
+  var source = this.V.get(source_id);
+  var target = this.V.get(target_id);
 
-    return this.add_edge(src, tgt, {opacity: 1.0});
-  };
+  var edge = new Edge(this.g.add_edge(source_id, target_id, options.directed, options.strength), source, target, options);
+  this.E.set(edge.id, edge);
 
-  Graph.prototype.clear = function(){
+  edge.paint(this.scene, options);
 
-    [...this.E.values()].forEach(e => {
-      this.remove_edge(e.id);
-    });
+  source.edges.add(edge.id);
+  target.edges.add(edge.id);
 
-    [...this.V.values()].forEach(v => {
-      this.remove_vertex(v.id);
-    })
-
-    console.info('before clear')
-    this.g.clear();
-    console.info('after clear');
-
-    this.V = new Map(); // vertex.id -> edge
-    this.E = new Map(); // edge.id -> edge
-    // this.E_by_V = new Map(); // vertex_id -> [edges]
-    this.edge_counts = {};
-    this.edge_id_spawn = 0;
-    this.vertex_id_spawn = 0;
-  };
-
-  Graph.prototype._make_key = function(source, target){
-    return '_' + source.toString() + '_' + target.toString();
-  };
-
-  Graph.prototype.add_vertex = function(options){
-    options = Object.assign({
-      cube: {},
-      label: {}
-    }, options);
-
-    var v = new Vertex(this.g.add_vertex(), options);
-    v.paint(this.scene, options);
-    this.V.set(v.id, v);
-    v.object.vertex = v;
-    
-    return v.id;
-  };
-
-  Graph.prototype.add_camera_vertex = function(id, options){
-    CAMERA_TARGET = this.V.get(id);
-    CAMERA_LOCK = options.lock;
-
-    console.assert(camera);
-    console.assert(CAMERA_TARGET);
-
-    if(CAMERA_VERTEX !== null){
-      this.remove_edge(CAMERA_EDGE.id);
-      this.remove_vertex(CAMERA_VERTEX.id);
-    }
-    CAMERA_VERTEX = new CameraVertex(this.g.add_vertex(), camera);
-    CAMERA_VERTEX.paint(this.scene, CAMERA_VERTEX.options)
-    
-    CAMERA_VERTEX.camera.lookAt(CAMERA_TARGET.position.clone().normalize());
-    controls.update(clock.getDelta());
-    
-    this.V.set(CAMERA_VERTEX.id, CAMERA_VERTEX);
-    return CAMERA_VERTEX;
-  };
-
-  Graph.prototype.add_edge = function(source_id, target_id, options){
-    console.assert(source_id !== undefined, "target must not be undefined");
-    console.assert(target_id !== undefined, "target must not be undefined");
-
-    options = Object.assign({
-      directed: false,
-      strength: 1.0,
-      color: 0x000000,
-      opacity: 1.0,
-      transparent: false,
-      arrow: false
-    }, options);
-
-    var source = this.V.get(source_id);
-    var target = this.V.get(target_id);
-
-    var edge = new Edge(this.g.add_edge(source_id, target_id, options.directed, options.strength), source, target, options);
-    this.E.set(edge.id, edge);
-
-    edge.paint(this.scene, options);
-
-    source.edges.add(edge.id);
-    target.edges.add(edge.id);
-
-    return edge.id;
-  };
+  return edge.id;
+};
 
 Graph.prototype.add_invisible_edge = function(source_id, target_id, options){
   return this.add_edge(source_id, target_id, Object.assign(options, {opacity: 0.0}));

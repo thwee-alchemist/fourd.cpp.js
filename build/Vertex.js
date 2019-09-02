@@ -1,82 +1,82 @@
   
   
-  // apiish
-  var Cube = function(options){
-    if(options === undefined){
-      options = {};
-    }
-    
-    if(options.width === undefined){
-      options.width = 3;
-    }
-    if(options.height === undefined){
-      options.height = 3;
-    }
-    if(options.depth === undefined){
-      options.depth = 3;
-    }
-    
-    if(options.wireframe === undefined){
-      options.wireframe = false;
-    }
-    
-    var geometry, material, material_args, texture;
-    geometry = new THREE.BoxGeometry(
-      options.width,
-      options.height,
-      options.depth
-    );
-    geometry.dynamic = true;
-    
-    if(options.texture !== undefined){
-      texture = new THREE.TextureLoader().load( options.texture );
-
-      material_args = { 
-        map: texture
-      };
-    }else{
-      material_args = { 
-        color: options.color,
-        wireframe: options.wireframe
-      };
-    }
-
-    material = new THREE.MeshBasicMaterial( material_args );
-    
-    var cube = new THREE.Mesh( geometry, material );
-    var scale = 2;
-    cube.position.set(
-      Math.random() * scale, 
-      Math.random() * scale,
-      Math.random() * scale
-    );
-    cube.matrixAutoUpdate = true;
-
-    cube.destroy = function(){
-      geometry.dispose();
-      material.dispose();
-      if(texture){
-        texture.dispose();
-      }
-    }
-    
-    return cube;
-  };
   
-  /* 
-    Vertex
-    
-    Creates a vertex which can be passed to Graph. 
-    setting a label property in the options parameter can allow
-    for a label to be drawn above or below a vertex. 
-    
-    Options:
-    - invisible
-    - see cube
-    - see label
-    
-  */
- var Vertex = function(id, options){
+var Cube = function(options){
+  if(options === undefined){
+    options = {};
+  }
+  
+  if(options.width === undefined){
+    options.width = 3;
+  }
+  if(options.height === undefined){
+    options.height = 3;
+  }
+  if(options.depth === undefined){
+    options.depth = 3;
+  }
+  
+  if(options.wireframe === undefined){
+    options.wireframe = false;
+  }
+  
+  var geometry, material, material_args, texture;
+  geometry = new THREE.BoxGeometry(
+    options.width,
+    options.height,
+    options.depth
+  );
+  geometry.dynamic = true;
+  
+  if(options.texture !== undefined){
+    texture = new THREE.TextureLoader().load( options.texture );
+
+    material_args = { 
+      map: texture
+    };
+  }else{
+    material_args = { 
+      color: options.color,
+      wireframe: options.wireframe
+    };
+  }
+
+  material = new THREE.MeshBasicMaterial( material_args );
+  
+  var cube = new THREE.Mesh( geometry, material );
+  var scale = 2;
+  cube.position.set(
+    Math.random() * scale, 
+    Math.random() * scale,
+    Math.random() * scale
+  );
+  cube.matrixAutoUpdate = true;
+
+  cube.destroy = function(){
+    geometry.dispose();
+    material.dispose();
+    if(texture){
+      texture.dispose();
+    }
+  }
+  
+  return cube;
+};
+  
+/* 
+  Vertex
+  
+  Creates a vertex which can be passed to Graph. 
+  setting a label property in the options parameter can allow
+  for a label to be drawn above or below a vertex. 
+  
+  Options:
+  - invisible
+  - see cube
+  - see label
+  
+*/
+var Vertex = function(id, options){
   this.options = options || {};
   this.id = id;
 
