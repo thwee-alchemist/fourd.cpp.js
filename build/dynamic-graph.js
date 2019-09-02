@@ -4,8 +4,38 @@ class Dynamic3DGraph extends HTMLElement {
     this.shadow = this.attachShadow({mode: 'open'});
     // this.connectedCallback();
 
-
     console.info('dynamic-graph instantiated')
+  }
+
+  async connectedCallback(){
+
+    Module.onRuntimeInitialized = () => {
+      this.module = Module;
+    };
+    Module.instantiateWasm();
+
+    console.info('connectedCallback')
+
+    var container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = this.width;
+    container.style.height = this.height;
+    
+    container.id = 'display';
+    this.shadow.appendChild(container);
+    
+    this._vertex_options = {cube: {size: 10, color: 0x000000}};
+    this._edge_options = {color: 0x000000};
+
+    this.second_module = new Promise((resolve, reject) => {
+      if(this.module){
+        resolve(this.module);
+      }
+    });
+
+    this.setupWasm(this.module)
+
+    console.info('connectedCallback done')
   }
 
   setupWasm(Module){
@@ -20,10 +50,9 @@ class Dynamic3DGraph extends HTMLElement {
       }, 
       Module.default_settings,
       Module.LayoutGraph,
-      this.resolve_graph
+      this
     );
     this._fourd.connect();
-    this._fourd.graph.connect();
     this._graph = this._fourd.graph;
   
     this._graph.settings.repulsion = 9e1;
@@ -33,67 +62,6 @@ class Dynamic3DGraph extends HTMLElement {
     this._graph.settings.inner_distance = 1e6;
     this._settings = this.graph.settings;
     console.info('wasm setup');
-  }
-
-  connectedCallback(){
-    console.info('connectedCallback')
-
-    this.addEventListener('wasm-ready', (e) => {
-      console.log('wasm-ready event');
-      this.setupWasm(e.detail.module)
-    })
-
-    this.ready = new Promise((resolve, reject) => {
-      this.resolve_graph = resolve;
-      var container = document.createElement('div');
-      container.style.position = 'relative';
-      container.style.width = this.width;
-      container.style.height = this.height;
-      
-      container.id = 'display';
-      this.shadow.appendChild(container)
-      
-      this._vertex_options = {cube: {size: 10, color: 0x000000}};
-      this._edge_options = {color: 0x000000};
-
-      var that = this;
-
-      if(!this.Module){
-        Module.onRuntimeInitialized = () => {
-          Module.noExitRuntime = true;
-          this.Module = Module;
-          
-          this.dispatchEvent(new CustomEvent('wasm-ready', {
-            bubbles: false,
-            detail: {
-              module: Module
-            }
-          }))
-        }
-      }else{
-        this.dispatchEvent(new CustomEvent('wasm-ready', {
-          bubbles: false,
-          detail: {
-            module: this.Module
-          }
-        }))
-      }
-    })
-
-    this.ready.then(() => {
-      this.running = true;
-      this.dispatchEvent(new CustomEvent('start', {
-        bubbles: true,
-        detail: null
-      }));
-    });
-
-  }
-
-
-  createdCallback(){
-    console.info('dynamic-graph created')
-    this.connectedCallback();
   }
 
   attributeChangedCallback(attr, oldVal, newVal){
@@ -113,11 +81,8 @@ class Dynamic3DGraph extends HTMLElement {
     }))
     this.running = false;
     // this.clear();
+
     this._fourd.disconnect();
-  }
-  
-  adoptedCallback() {
-    console.log('Custom element moved to new page.');
   }
 
   get graph(){

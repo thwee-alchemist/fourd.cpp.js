@@ -20,7 +20,7 @@
       options.wireframe = false;
     }
     
-    var geometry, material, material_args;
+    var geometry, material, material_args, texture;
     geometry = new THREE.BoxGeometry(
       options.width,
       options.height,
@@ -29,8 +29,10 @@
     geometry.dynamic = true;
     
     if(options.texture !== undefined){
+      texture = new THREE.TextureLoader().load( options.texture );
+
       material_args = { 
-        map: new THREE.TextureLoader().load( options.texture )
+        map: texture
       };
     }else{
       material_args = { 
@@ -49,6 +51,14 @@
       Math.random() * scale
     );
     cube.matrixAutoUpdate = true;
+
+    cube.destroy = function(){
+      geometry.dispose();
+      material.dispose();
+      if(texture){
+        texture.dispose();
+      }
+    }
     
     return cube;
   };
@@ -190,6 +200,8 @@ Vertex.prototype.paint = function(scene, options){
     this.object.add(cube);
     cube.position.set(0, 0, 0);
     cube.vertex = this;
+
+    this.cube = cube;
   }
   if(this.options.label && this.options.label.text){
     this.options.label.object = this.object;

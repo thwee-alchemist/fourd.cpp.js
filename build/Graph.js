@@ -1,8 +1,9 @@
+import { Module } from "module";
 
   // Graph
-  var Graph = function(scene, default_settings, LayoutGraph, resolve){
+  var Graph = function(scene, default_settings, LayoutGraph, dynamic_graph){
     console.info('Graph instantiated');
-    this.resolve = resolve;
+    this.dynamic_graph = dynamic_graph;
     this.LayoutGraph = LayoutGraph;
     this.scene = scene;
     this.type = 'Graph';
@@ -21,14 +22,18 @@
     console.info("Graph.connect")
     var LayoutGraph = this.LayoutGraph;
     this.g = new LayoutGraph(this.settings);
-    this.resolve(true);
+    this.dynamic_graph.running = true;
+    this.dynamic_graph.dispatchEvent(new CustomEvent('start', {
+      bubbles: true,
+      detail: null
+    }));
   }
 
   Graph.prototype.disconnect = function(){
-    console.info('Graph disconnect')
+    console.info('Graph disconnect');
 
     this.clear();
-    this.g.delete();
+    Module.destroy(this.g);
   }
 
   Graph.prototype.random_edge = function(){
@@ -174,6 +179,9 @@ Graph.prototype.remove_vertex = function(vertex_id){
     // remove
     // this.E_by_V.delete(vertex_id, []);
     this.scene.remove(vertex.object);
+    if(vertex.cube){
+      vertex.cube.destroy();
+    }
     this.V.delete(vertex.id);
   }
 };

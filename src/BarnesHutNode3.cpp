@@ -18,8 +18,10 @@ BarnesHutNode3::BarnesHutNode3(Settings* _settings){
 
 BarnesHutNode3::~BarnesHutNode3(){
   for(auto outer : outers){
-    delete outer.second;
+    delete &outer.second;
   }
+  outers.clear();
+  inners.clear();
 }
 
 gmtl::Vec3f BarnesHutNode3::center(){

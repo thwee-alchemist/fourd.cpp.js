@@ -14,9 +14,8 @@ CAMERA_TARGET = null
 CAMERA_LOCK = false
 
 class FourDController {
-  constructor(shadowRoot, options, default_settings, LayoutGraph, resolve_graph){
-
-    this.resolve_graph = resolve_graph;
+  constructor(shadowRoot, options, default_settings, LayoutGraph, dynamic_graph){
+    this.dynamic_graph = dynamic_graph;
     this.shadowRoot = shadowRoot;
     console.info("FourDCtrl instantiated");
     this.default_settings = default_settings;
@@ -101,7 +100,7 @@ class FourDController {
       border: this.settings.border
     })
   
-    this.graph = new Graph(this.scene, this.default_settings, this.LayoutGraph, this.resolve_graph);
+    this.graph = new Graph(this.scene, this.default_settings, this.LayoutGraph, this.dynamic_graph);
     this.graph.connect();
 
     camera.position.z = -250;
@@ -193,11 +192,12 @@ class FourDController {
   }
 
   disconnect(){
-    console.info('FourDCtrl disconnect')
+    console.info('FourDCtrl disconnect');
     cancelAnimationFrame(this.requestId);
 
     this.graph.disconnect();
-    console.info('FourDCtrl disconnected')
+    this.scene.dispose();
+    console.info('FourDCtrl disconnected');
   }
 
   camera_vertex(){

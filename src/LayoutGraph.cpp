@@ -46,11 +46,11 @@ LayoutGraph::~LayoutGraph(){
   // delete &settings;
 
   for(int i=0; i<E.size(); i++){
-    delete E[i];
+    delete &E[i];
   }
 
   for(int i=0; i<V.size(); i++){
-    delete V[i];
+    delete &V[i];
   }
 
   E.clear();
