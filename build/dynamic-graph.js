@@ -1,3 +1,11 @@
+var READY = new Promise((resolve, reject) => {
+  Module.onRuntimeInitialized = () => {
+    window.DEFAULT_SETTINGS = Module.default_settings;
+    window.LAYOUT_GRAPH = Module.LayoutGraph;
+    resolve({default_settings: Module.default_settings, LayoutGraph: Module.LayoutGraph});
+  };
+});
+
 class Dynamic3DGraph extends HTMLElement {
   constructor(){
     super();
@@ -5,19 +13,14 @@ class Dynamic3DGraph extends HTMLElement {
     // this.connectedCallback();
 
     console.info('dynamic-graph instantiated')
-
-    this.module = new Promise((resolve, reject) => {
-      this.resolve_module = resolve;
-    })
   }
 
   connectedCallback(){
+    if(this.running){
+      return;
+    }
 
     console.info('connectedCallback')
-
-    Module.onRuntimeInitialized = () => {
-      this.resolve_module(Module);
-    };
 
     var container = document.createElement('div');
     container.style.position = 'relative';
@@ -30,9 +33,7 @@ class Dynamic3DGraph extends HTMLElement {
     this._vertex_options = {cube: {size: 10, color: 0x000000}};
     this._edge_options = {color: 0x000000};
 
-    this.module.then((Module) => {
-      this.setupWasm(Module);
-    });
+    READY.then((module) => this.setupWasm(module));
   }
 
   setupWasm(Module){
