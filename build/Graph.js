@@ -31,7 +31,7 @@ Graph.prototype.disconnect = function(){
   console.info('Graph disconnect');
 
   this.clear();
-  this.dynamic_graph.module.destroy(this.g);
+  this.g.delete();
 }
 
 Graph.prototype.random_edge = function(){
