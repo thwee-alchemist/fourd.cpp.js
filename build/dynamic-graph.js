@@ -6,7 +6,9 @@ class Dynamic3DGraph extends HTMLElement {
 
     console.info('dynamic-graph instantiated')
 
-    this.module = new Promise();
+    this.module = new Promise((resolve, reject) => {
+      this.resolve_module = resolve;
+    })
   }
 
   connectedCallback(){
@@ -14,7 +16,7 @@ class Dynamic3DGraph extends HTMLElement {
     console.info('connectedCallback')
 
     Module.onRuntimeInitialized = () => {
-      this.module.resolve(Module);
+      this.resolve_module(Module);
     };
 
     var container = document.createElement('div');
@@ -28,7 +30,9 @@ class Dynamic3DGraph extends HTMLElement {
     this._vertex_options = {cube: {size: 10, color: 0x000000}};
     this._edge_options = {color: 0x000000};
 
-    this.module.then(this.setupWasm);
+    this.module.then((Module) => {
+      this.setupWasm(Module);
+    });
   }
 
   setupWasm(Module){
