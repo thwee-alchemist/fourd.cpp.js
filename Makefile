@@ -35,14 +35,14 @@ bundle: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js
 	cp build/fourd.wasm dist/fourd.wasm
 	minify build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/FourDCtrl.js build/dynamic-graph.js > dist/dynamic-graph.bundle.min.js
 
-optimized: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/Vertex.h src/Edge.cpp src/Edge.h src/BarnesHutNode3.cpp src/BarnesHutNode3.h src/LayoutGraph.cpp src/LayoutGraph.h src/fourd.cpp
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/FourDType.cpp -o dist/pure/FourDType.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Settings.cpp -o dist/pure/Settings.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Vertex.cpp -o dist/pure/Vertex.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Edge.cpp -o dist/pure/Edge.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/BarnesHutNode3.cpp -o dist/pure/BarnesHutNode3.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/LayoutGraph.cpp -o dist/pure/LayoutGraph.o
-	../emsdk/emscripten/incoming/em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 dist/pure/FourDType.o dist/pure/Settings.o dist/pure/Vertex.o dist/pure/Edge.o dist/pure/BarnesHutNode3.o dist/pure/LayoutGraph.o src/fourd.cpp --bind -o dist/pure/fourd.js
+docker: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/Vertex.h src/Edge.cpp src/Edge.h src/BarnesHutNode3.cpp src/BarnesHutNode3.h src/LayoutGraph.cpp src/LayoutGraph.h src/fourd.cpp
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/FourDType.cpp -o dist/pure/FourDType.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Settings.cpp -o dist/pure/Settings.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Vertex.cpp -o dist/pure/Vertex.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/Edge.cpp -o dist/pure/Edge.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/BarnesHutNode3.cpp -o dist/pure/BarnesHutNode3.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 -s LINKABLE=1 src/LayoutGraph.cpp -o dist/pure/LayoutGraph.o
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten em++ -I ./src/gmtl -std=c++11 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s SAFE_HEAP=1 -O3 dist/pure/FourDType.o dist/pure/Settings.o dist/pure/Vertex.o dist/pure/Edge.o dist/pure/BarnesHutNode3.o dist/pure/LayoutGraph.o src/fourd.cpp --bind -o dist/pure/fourd.js
 
 	rm dist/dynamic-graph.bundle.min.js
 	cat build/r105.three.min.js >> dist/dynamic-graph.bundle.min.js
@@ -58,6 +58,9 @@ optimized: src/FourDType.cpp src/Settings.cpp src/Settings.h src/Vertex.cpp src/
 	# minify build/r105.three.min.js build/OrbitControls.js dist/pure/fourd.js build/Vertex.js build/Edge.js build/Graph.js build/FourDCtrl.js build/dynamic-graph.js > dist/dynamic-graph.bundle.min.js
 	cp dist/pure/fourd.wasm ../portfolio/.
 	cp dist/dynamic-graph.bundle.min.js ../portfolio/.
+	
+docker:
+	docker run --rm -v `pwd`:`pwd` trzeci/emscripten emmake helloworld.cpp -o helloworld.js
 
 
 debug: build/jquery-3.4.0.min.js build/r105.three.min.js build/OrbitControls.js build/fourd.js build/Vertex.js build/Edge.js build/Graph.js build/FourDCtrl.js build/dynamic-graph.js
