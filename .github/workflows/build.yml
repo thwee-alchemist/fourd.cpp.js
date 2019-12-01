@@ -12,4 +12,4 @@ jobs:
       with:
         emscripten-version: '1.38.47'
     - name: Build fourd.cpp.js
-      run: make optimized
+      run: make docker
