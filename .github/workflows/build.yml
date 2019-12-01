@@ -1,0 +1,15 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: lovasoa/setup-emscripten@master
+      with:
+        emscripten-version: '1.38.47'
+    - name: Build fourd.cpp.js
+      run: make optimized
