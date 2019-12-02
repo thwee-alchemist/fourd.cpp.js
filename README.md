@@ -33,3 +33,9 @@ Then include this in your HTML:
   </script>
 </body>
 ```
+
+
+## Building
+Install [imvu/gmtl](https://github.com/imvu/gmtl)
+Install minfiy
+`make bundle`
