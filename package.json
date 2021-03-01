@@ -30,7 +30,7 @@
     "require": "^2.4.20",
     "rollup-plugin-ignore": "^1.0.5",
     "serve-favicon": "^2.5.0",
-    "three": "^0.105.2",
+    "three": "^0.125.0",
     "three-orbit-controls": "^82.1.0",
     "yargs": "^14.0.0"
   },
