@@ -26,7 +26,7 @@
   "dependencies": {
     "directory-tree": "^2.2.3",
     "express": "^4.17.1",
-    "jquery-ui": "^1.12.1",
+    "jquery-ui": "^1.13.0",
     "require": "^2.4.20",
     "rollup-plugin-ignore": "^1.0.5",
     "serve-favicon": "^2.5.0",
